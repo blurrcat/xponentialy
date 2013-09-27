@@ -1,0 +1,6 @@
+Flask
+Flask-WTF
+Flask-Admin
+Flask-SQLAlchemy
+Flask-Restless
+PyMySQL

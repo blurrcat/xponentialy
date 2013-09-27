@@ -31,6 +31,12 @@ setup(
     package_dir={'xponentialy': 'xponentialy'},
     include_package_data=True,
     install_requires=[
+        'Flask',
+        'Flask-WTF',
+        'Flask-Admin',
+        'Flask-SQLAlchemy',
+        'Flask-Restless',
+        'PyMySQL',
     ],
     license="BSD",
     zip_safe=False,
@@ -46,5 +52,4 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
     ],
-    test_suite='tests',
 )

@@ -27,7 +27,7 @@ lint:
 	flake8 xponentialy tests
 
 test:
-	python setup.py test
+	tox -e py26
 
 test-all:
 	tox
