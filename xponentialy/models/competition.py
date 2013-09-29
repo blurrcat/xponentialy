@@ -15,8 +15,12 @@ class House(db.Model):
     __tablename__ = 'house'
     id = db.Column(db.INTEGER(display_width=11),
                    primary_key=True, nullable=False)
-    name = db.Column(db.VARCHAR(length=20), nullable=False)
+    name = db.Column(db.String(length=20), nullable=False)
     picture = db.Column(db.VARCHAR(length=100))
+    user = db.relationship('User', backref='house')
+
+    def __unicode__(self):
+        return u'[%s]%s' % (self.id, self.name)
 
 
 class Badge(db.Model):
@@ -27,10 +31,10 @@ class Badge(db.Model):
     badge_pic = db.Column(db.VARCHAR(length=128), nullable=False)
     min_points = db.Column(db.INTEGER(display_width=11), nullable=False)
     description = db.Column(db.VARCHAR(length=256))
-    users = db.relationship('UserBadge', backref='badges')
+    users = db.relationship('UserBadge')
 
-    def __str__(self):
-        return self.name
+    def __unicode__(self):
+        return u'[%s]%s' % (self.id, self.name)
 
 
 class UserBadge(db.Model):
@@ -41,7 +45,10 @@ class UserBadge(db.Model):
                          db.ForeignKey('badge.id'), primary_key=True,
                          nullable=False)
     date = db.Column(db.DATE, nullable=False)
-    user = db.relationship('User')
+    user = db.relationship('User', backref='badges')
+
+    def __unicode__(self):
+        return u'%s has %s' % (self.user, self.badge)
 
 
 class Challenge(db.Model):
@@ -64,11 +71,10 @@ class Challenge(db.Model):
     sleep_value = db.Column(db.INTEGER(display_width=11), nullable=False)
     sleep_time = db.Column(db.TIME, nullable=False)
     quota = db.Column(db.INTEGER(display_width=11))
-    participants = db.relationship('ChallengeParticipant',
-                                   backref='challenges')
+    participants = db.relationship('ChallengeParticipant')
 
-    def __str__(self):
-        return self.title
+    def __unicode__(self):
+        return u'[%s]%s' % (self.id, self.title)
 
 
 class ChallengeParticipant(db.Model):
@@ -80,7 +86,7 @@ class ChallengeParticipant(db.Model):
     challenge_id = db.Column(db.INTEGER(display_width=11),
                              db.ForeignKey('challenge.id'),
                              nullable=False)
-    user = db.relationship('User')
+    user = db.relationship('User', backref='challenges')
     start_time = db.Column(db.TIMESTAMP(), nullable=False)
     complete_time = db.Column(db.TIMESTAMP(), nullable=False)
     end_time = db.Column(db.TIMESTAMP(), nullable=False)
@@ -88,11 +94,19 @@ class ChallengeParticipant(db.Model):
     category = db.Column(db.INTEGER(display_width=11))
     inactive = db.Column(db.INTEGER(display_width=1), nullable=False)
 
+    def __unicode__(self):
+        return u'[%s]%s participates in %s' % (
+            self.id, self.user, self.challenge)
+
 
 class InvalidPeriod(db.Model):
     __tablename__ = 'invalidperiod'
     id = db.Column(db.INTEGER(display_width=11),
                    primary_key=True, nullable=False)
-    user_id = db.Column(db.INTEGER(display_width=11))
+    user_id = db.Column(db.INTEGER(display_width=11), db.ForeignKey('user.id'))
     start_date = db.Column(db.DATE())
     end_date = db.Column(db.DATE())
+    user = db.relationship('User', backref='invalid_periods')
+
+    def __unicode__(self):
+        return u'[%s]%s to %s' % (self.id, self.start_date, self.end_date)

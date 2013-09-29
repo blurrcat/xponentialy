@@ -8,7 +8,7 @@
 
 """
 from flask import Flask
-
+import flask
 
 
 def _create_app(config_file):
@@ -34,8 +34,6 @@ def create_db_manager(config_file='config'):
     return manager
 
 
-
-
 def create_app(config_file='config'):
     app = _create_app(config_file)
 
@@ -46,14 +44,10 @@ def create_app(config_file='config'):
     from flask.ext.admin import Admin
     from xponentialy import views
 
-    api = APIManager(app)
+    api = APIManager(app, flask_sqlalchemy_db=db)
     views.api.create_views(api)
 
     admin = Admin(app)
     views.admin.create_views(admin, db)
 
     return app
-
-
-if __name__ == '__main__':
-    create_database('config')
