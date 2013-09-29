@@ -9,5 +9,5 @@ Launch the application. Used by EB.
 """
 from xponentialy import create_app
 
-app = create_app('config.py')
+app = create_app('config')
 app.run()
