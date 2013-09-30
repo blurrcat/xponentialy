@@ -7,15 +7,16 @@
 """
 
 """
+__version__ = '0.1.0'
 from flask import Flask
-import flask
 
 
 def _create_app(config_file):
     app = Flask(__name__)
     app.config.from_object(config_file)
     try:
-        app.config.from_envvar('FLASK_EB_CONFIG')  # try load production config
+        # try load deployment config
+        app.config.from_envvar('DEPLOYMENT_CONFIG')
     except RuntimeError:
         pass
     return app
