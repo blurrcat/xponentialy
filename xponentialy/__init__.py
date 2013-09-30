@@ -7,24 +7,48 @@
 """
 
 """
-import os
+__version__ = '0.1.0'
 from flask import Flask
 
 
-def create_app(config_file):
+def _create_app(config_file):
     app = Flask(__name__)
-    app.config.from_pyfile(config_file)
+    app.config.from_object(config_file)
     try:
-        app.config.from_envvar('FLASK_EB_CONFIG')  # try load production config
+        # try load deployment config
+        app.config.from_envvar('DEPLOYMENT_CONFIG')
     except RuntimeError:
         pass
+    return app
 
-    from xponentialy.views import admin
-    from xponentialy.views import api
-    from xponentialy.models import db
 
-    admin.init_app(app)
-    api.init_app(app)
+def create_db_manager(config_file='config'):
+    app = _create_app(config_file)
+    from models import db
     db.init_app(app)
+    from flask.ext.script import Manager
+    from flask.ext.migrate import Migrate, MigrateCommand
+    migrate = Migrate(app, db)
+    manager = Manager(app)
+    manager.add_command('db', MigrateCommand)
+
+    return manager
+
+
+def create_app(config_file='config'):
+    app = _create_app(config_file)
+
+    from models import db
+    db.init_app(app)
+
+    from flask.ext.restless import APIManager
+    from flask.ext.admin import Admin
+    from xponentialy import views
+
+    api = APIManager(app, flask_sqlalchemy_db=db)
+    views.api.create_views(api)
+
+    admin = Admin(app)
+    views.admin.create_views(admin, db)
 
     return app
