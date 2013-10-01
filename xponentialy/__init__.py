@@ -7,7 +7,7 @@
 """
 
 """
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 from flask import Flask
 
 
@@ -18,7 +18,10 @@ def _create_app(config_file):
         # try load deployment config
         app.config.from_envvar('DEPLOYMENT_CONFIG')
     except RuntimeError:
-        pass
+        import os
+        app.logger.warning(
+            'Cannot load DEPLOYMENT_CONFIG, ignore; os.environ: %s',
+            os.environ)
     return app
 
 
