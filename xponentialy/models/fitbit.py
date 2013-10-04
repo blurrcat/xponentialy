@@ -8,6 +8,8 @@
 """
 
 """
+import time
+from datetime import datetime
 from . import db
 
 
@@ -51,6 +53,26 @@ class Activity(db.Model):
         return u'[%s]steps: %s; floors: %s; distance: %s; elevation: %s' % (
             self.id, self.steps, self.floors, self.distance, self.elevation
         )
+
+    def update(self, data):
+        summary = data['summary']
+        self.steps = summary.get('steps', 0)
+        self.floors = summary.get('floors', 0)
+        # todo: confirm calories field name
+        self.calories = summary.get('caloriesOut', 0)
+        self.active_score = summary.get('activeScore', 0)
+        # todo: confirm distance field
+        for item in summary['distances']:
+            if item['activity'] == 'total':
+                self.distance = item['distance']
+                break
+        self.elevation = summary.get('elevation')
+        self.min_sedentary = summary['sedentaryMinutes']
+        self.min_lightlyactive = summary['lightlyActiveMinutes']
+        self.min_fairlyactive = summary['fairlyActiveMinutes']
+        self.min_veryactive = summary['veryActiveMinutes']
+        self.activity_calories = summary.get('activityCalories', 0)
+        self.last_update = time.time()
 
 
 class IntraDayActivity(db.Model):
@@ -98,3 +120,28 @@ class Sleep(db.Model):
         return u'[%s]total_time: %s; date: %s; start_time: %s; efficiency: %s' % (
             self.id, self.total_time, self.date, self.start_time, self.efficiency
         )
+
+    def update(self, data):
+        summary = data['summary']
+        self.total_time = summary['totalTimeInBed']
+        self.time_asleep = summary['totalMinutesAsleep']
+        # todo: what if we have multiple sleep records?
+        if summary['totalSleepRecords'] >= 1:
+            sleep = data['sleep'][0]
+            self.start_time = datetime.strptime(
+                sleep['startTime'], '%Y-%m-%dT%H:%M:%S.%f')
+            self.awaken_count = sleep['awakeningsCount']
+            self.min_awake = sleep['minutesAwake']
+            self.min_to_asleep = sleep['minutesToFallAsleep']
+            self.min_after_wake = sleep['minutesAfterWakeup']
+            self.efficiency = sleep['efficiency']
+
+
+__models = {
+    'activity': Activity,
+    'sleep': Sleep
+}
+
+
+def get_model_by_name(name):
+    return __models.get(name)
