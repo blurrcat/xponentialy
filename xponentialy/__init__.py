@@ -22,13 +22,13 @@ def config_app():
         app.logger.warning(
             'Cannot load DEPLOYMENT_CONFIG, ignore; os.environ: %s',
             os.environ)
-    return app
+    from models import db
+    db.init_app(app)
+    return app, db
 
 
 def create_db_manager():
-    app = config_app()
-    from models import db
-    db.init_app(app)
+    app, db = config_app()
     from flask.ext.script import Manager
     from flask.ext.migrate import Migrate, MigrateCommand
     migrate = Migrate(app, db)
@@ -39,10 +39,7 @@ def create_db_manager():
 
 
 def create_app():
-    app = config_app()
-
-    from models import db
-    db.init_app(app)
+    app, db = config_app()
 
     from flask.ext.restless import APIManager
     from flask.ext.admin import Admin

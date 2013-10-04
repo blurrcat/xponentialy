@@ -9,7 +9,7 @@ from xponentialy import config_app
 from xponentialy.models import User
 from xponentialy.models.fitbit import get_model_by_name
 
-app = config_app()
+app, _ = config_app()
 celery = Celery(app.import_name,
                 broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
@@ -23,6 +23,7 @@ class ContextTask(TaskBase):
         with app.app_context():
             return TaskBase.__call__(self, *args, **kwargs)
 celery.Task = ContextTask
+
 
 @celery.task()
 def subscribe(user_id, subscription_id, delete=False, collection=None):
@@ -65,7 +66,6 @@ def subscribe(user_id, subscription_id, delete=False, collection=None):
             #   u'ownerType': u'user', u'subscriberId': u'ec2-dev',
             #   u'subscriptionId': u'ec2-dev'
             # }
-            user.fitbit_id = resp[u'ownerId']
             logger.info('Subscription success: %s', resp)
             return resp
     else:
@@ -73,9 +73,9 @@ def subscribe(user_id, subscription_id, delete=False, collection=None):
 
 
 @celery.task
-def get_update(collection, date, fitbit_id):
+def get_update(collection, date, user_id):
     logger = current_app.logger
-    user = User.query.filter_by(fitbit_id=fitbit_id)
+    user = User.query.get(user_id)
     if user:
         client = Fitbit(
             current_app.config['FITBIT_KEY'],
@@ -103,7 +103,7 @@ def get_update(collection, date, fitbit_id):
             item.update(data)
             return data, item
     else:
-        logger.error('User not found by fitbit id %s' % fitbit_id)
+        logger.error('User %d not found', user_id)
 
 
 @celery.task
