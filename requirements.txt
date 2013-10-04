@@ -7,3 +7,4 @@ PyMySQL==0.5
 fitbit==0.0.2
 gevent==0.13.8
 celery==3.0.23
+flower==0.5.2

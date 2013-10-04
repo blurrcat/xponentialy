@@ -37,8 +37,11 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
     :return: None
     """
     logger = current_app.logger
-    user = User.query.with_entities(
-        User.oauth_token, User.oauth_secret).filter_by(id=user_id).first()
+    try:
+        user = User.query.with_entities(
+            User.oauth_token, User.oauth_secret).filter_by(id=user_id).first()
+    except Exception as e:
+        raise subscribe.retry(exc=e)
     if user:
         client = Fitbit(
             current_app.config['FITBIT_KEY'],
@@ -82,7 +85,10 @@ def get_update(collection, date, user_id):
             'Got notifications for unregistered collection: %s',
             collection
         )
-    user = User.query.get(user_id)
+    try:
+        user = User.query.get(user_id)
+    except Exception as e:
+        raise get_update.retry(exc=e)
     if user:
         client = Fitbit(
             current_app.config['FITBIT_KEY'],
