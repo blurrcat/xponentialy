@@ -18,6 +18,8 @@ SQLALCHEMY_ECHO = True
 SECRET_KEY = '\x03\xea\xd2`\x9a8P\x86>\xf4 \xfe3br^e\xbfw\xf1'
 
 # Fitbit
+FITBIT_KEY = ''
+FITBIT_SECRET = ''
 SUBSCRIPTION_COLLECTION = None
 SUBSCRIPTION_ID = ''
 

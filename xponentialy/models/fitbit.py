@@ -138,7 +138,7 @@ class Sleep(db.Model):
 
 
 __models = {
-    'activity': Activity,
+    'activities': Activity,
     'sleep': Sleep
 }
 

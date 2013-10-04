@@ -9,7 +9,7 @@ from xponentialy import config_app
 from xponentialy.models import User
 from xponentialy.models.fitbit import get_model_by_name
 
-app, _ = config_app()
+app, db = config_app()
 celery = Celery(app.import_name,
                 broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
@@ -26,18 +26,19 @@ celery.Task = ContextTask
 
 
 @celery.task()
-def subscribe(user_id, subscription_id, delete=False, collection=None):
+def subscribe(user_id, subscriber_id, delete=False, collection=None):
     """
     Subscribe/unsubscribe a user for his fitbit data
     :param user_id: user's XP account id
-    :param subscription_id: subscription endpoint id
+    :param subscriber_id: subscriber endpoint id
     :param delete: set to True to unsubscribe
     :param collection: one of sleep, foods, body, activities.
         Default to all of them.
     :return: None
     """
     logger = current_app.logger
-    user = User.query.get(user_id)
+    user = User.query.with_entities(
+        User.oauth_token, User.oauth_secret).filter_by(id=user_id).first()
     if user:
         client = Fitbit(
             current_app.config['FITBIT_KEY'],
@@ -51,12 +52,12 @@ def subscribe(user_id, subscription_id, delete=False, collection=None):
             method = 'POST'
         try:
             resp = client.subscription(
-                subscription_id, user_id, collection, method=method)
+                subscriber_id, user_id, collection, method=method)
         except HTTPException as e:
             logger.error(
                 'Subscription error: %s; user_id: %s, '
                 'subscription_id: %s, collection: %s', e, user_id,
-                subscription_id, collection)
+                subscriber_id, collection)
         except Exception as e:
             raise subscribe.retry(exc=e)
         else:
@@ -75,6 +76,12 @@ def subscribe(user_id, subscription_id, delete=False, collection=None):
 @celery.task
 def get_update(collection, date, user_id):
     logger = current_app.logger
+    model = get_model_by_name(collection)
+    if not model:
+        logger.warning(
+            'Got notifications for unregistered collection: %s',
+            collection
+        )
     user = User.query.get(user_id)
     if user:
         client = Fitbit(
@@ -89,18 +96,18 @@ def get_update(collection, date, user_id):
         except HTTPException as e:
             logger.error(
                 'Fail to get update for %s: %s', {
-                    'user': '%s(%s)' % (user.username, user.fitbit_id),
+                    'user': '%s' % user.username,
                     'collection': collection,
                     'date': date
                 }, e)
         except Exception as e:
             raise get_update.retry(exc=e)
         else:
-            model = get_model_by_name(collection)
             item = model.query.get((user.id, date))
             if not item:
                 item = model(user=user, date=date)
             item.update(data)
+            db.session.commit()
             return data, item
     else:
         logger.error('User %d not found', user_id)

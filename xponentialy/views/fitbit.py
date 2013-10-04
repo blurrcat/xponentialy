@@ -23,7 +23,7 @@ def notification():
         get_update.delay(
             update['collectionType'],
             update['date'],
-            update['subscriberId']
+            update['subscriptionId']
         )
     return Response(status=204)
 
