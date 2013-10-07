@@ -3,8 +3,7 @@
 from gevent import monkey
 monkey.patch_all()
 
-import time
-
+from datetime import datetime
 from gevent import spawn, sleep
 from gevent.event import AsyncResult
 from flask import current_app
@@ -154,16 +153,16 @@ def get_update(collection, date, user_id):
                     'date': date
                 }, e)
             update.update = 'Fail to get update: %s' % e
-            update.time_updated = time.time()
+            update.time_updated = datetime.now()
         else:
-            item = model(user=user, date=date)
+            item = model(user_id=user_id, date=date)
             item.update(data)
             db.session.merge(item)
             update.update = 'update success'
-            update.time_updated = time.time()
+            update.time_updated = datetime.now()
     else:
         update.update = 'User %d not found' % user_id
-        update.time_updated = time.time()
+        update.time_updated = datetime.now()
     # will never reach here if any unhandled exception happened,
     # like request timeout. In that case, the 'update_time' field
     # will be empty. We may setup a cronjob to check them later
