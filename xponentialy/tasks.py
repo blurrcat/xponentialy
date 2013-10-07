@@ -1,31 +1,70 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
-from celery import Celery
+from gevent import monkey
+monkey.patch_all()
+
+from gevent import spawn, sleep
+from gevent.event import AsyncResult
+
 from flask import current_app
 from fitbit import Fitbit
 from fitbit.exceptions import HTTPException
 
-from xponentialy import config_app
-from xponentialy.models import User
+from xponentialy.models import User, db
 from xponentialy.models.fitbit import get_model_by_name
 
-app, db = config_app()
-celery = Celery(app.import_name,
-                broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
-TaskBase = celery.Task
+
+class Task(object):
+    RETRY_INTERVAL = 1
+    RETRY_MAX = 0
+
+    def __init__(self, max_retry=None, retry_interval=None, logger=None):
+        self.max_retry = max_retry or Task.RETRY_MAX
+        self.retry_interval = retry_interval or Task.RETRY_INTERVAL
+        self.logger = logger
+        self.result = AsyncResult()
+        self.tried = 0
+
+    def __call__(self, f):
+        def inner(*args, **kwargs):
+            def on_exception(greenlet):
+                if self.tried < self.max_retry:
+                    if self.logger:
+                        self.logger.error(
+                            'Unhandled exception in task: %s(%s, %s): %s; ' +
+                            'tried %d times; retry in %d sec', f, args, kwargs,
+                            greenlet.exception, self.tried, self.retry_interval
+                        )
+                    self.tried += 1
+                    sleep(self.retry_interval)
+                    inner(*args, **kwargs)
+                else:
+                    if self.logger:
+                        self.logger.error(
+                            'Unhandled exception in task: %s(%s, %s): %s; ' +
+                            'tried %d times; abort', f, args, kwargs,
+                            greenlet.exception, self.tried
+                        )
+                    self.result.set_exception(greenlet.exception)
+
+            def on_value(greenlet):
+                self.result.set(greenlet.value)
+
+            g_task = spawn(f, *args, **kwargs)
+            g_task.link_exception(on_exception)
+            g_task.link_value(on_value)
+
+            return self.result
+        return inner
 
 
-class ContextTask(TaskBase):
-    abstract = True
-
-    def __call__(self, *args, **kwargs):
-        with app.app_context():
-            return TaskBase.__call__(self, *args, **kwargs)
-celery.Task = ContextTask
+def init_app(app):
+    conf = app.config
+    Task.RETRY_INTERVAL = conf['TASK_RETRY_INTERVAL']
+    Task.RETRY_MAX = conf['TASK_RETRY_MAX']
 
 
-@celery.task()
+@Task
 def subscribe(user_id, subscriber_id, delete=False, collection=None):
     """
     Subscribe/unsubscribe a user for his fitbit data
@@ -37,11 +76,8 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
     :return: None
     """
     logger = current_app.logger
-    try:
-        user = User.query.with_entities(
-            User.oauth_token, User.oauth_secret).filter_by(id=user_id).first()
-    except Exception as e:
-        raise subscribe.retry(exc=e)
+    user = User.query.with_entities(
+        User.oauth_token, User.oauth_secret).filter_by(id=user_id).first()
     if user:
         client = Fitbit(
             current_app.config['FITBIT_KEY'],
@@ -61,8 +97,6 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
                 'Subscription error: %s; user_id: %s, '
                 'subscription_id: %s, collection: %s', e, user_id,
                 subscriber_id, collection)
-        except Exception as e:
-            raise subscribe.retry(exc=e)
         else:
             # resp:
             # {
@@ -76,7 +110,7 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
         logger.error('User %d not found', user_id)
 
 
-@celery.task
+@Task
 def get_update(collection, date, user_id):
     logger = current_app.logger
     model = get_model_by_name(collection)
@@ -117,9 +151,3 @@ def get_update(collection, date, user_id):
             return data, item
     else:
         logger.error('User %d not found', user_id)
-
-
-@celery.task
-def celery_test_task(a, b):
-    current_app.logger.info('Execute celery test task: %d + %d', a, b)
-    return a + b

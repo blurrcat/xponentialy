@@ -23,5 +23,6 @@ FITBIT_SECRET = ''
 SUBSCRIPTION_COLLECTION = None
 SUBSCRIPTION_ID = ''
 
-# Celery
-CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+# Tasks
+TASK_RETRY_INTERVAL = 30
+TASK_RETRY_MAX = 3

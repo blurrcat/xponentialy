@@ -43,7 +43,9 @@ def create_app():
 
     from flask.ext.restless import APIManager
     from flask.ext.admin import Admin
-    from xponentialy import views
+    from xponentialy import views, tasks
+
+    tasks.init_app(app)
 
     api = APIManager(app, flask_sqlalchemy_db=db)
     views.api.create_views(api)
