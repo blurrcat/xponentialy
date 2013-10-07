@@ -1,16 +1,17 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
-# from gevent import monkey
-# monkey.patch_all()
+from gevent import monkey
+monkey.patch_all()
+
+import time
 
 from gevent import spawn, sleep
 from gevent.event import AsyncResult
-
 from flask import current_app
 from fitbit import Fitbit
 from fitbit.exceptions import HTTPException
 
-from xponentialy.models import User, db
+from xponentialy.models import User, Update, db
 from xponentialy.models.fitbit import get_model_by_name
 
 
@@ -131,10 +132,10 @@ def get_update(collection, date, user_id):
             'Got notifications for unregistered collection: %s',
             collection
         )
-    try:
-        user = User.query.get(user_id)
-    except Exception as e:
-        raise get_update.retry(exc=e)
+        return
+    user = User.query.with_entities(
+        User.oauth_token, User.oauth_secret).filter_by(id=user_id).first()
+    update = Update(user_id=user_id, type=collection)
     if user:
         client = Fitbit(
             current_app.config['FITBIT_KEY'],
@@ -148,18 +149,23 @@ def get_update(collection, date, user_id):
         except HTTPException as e:
             logger.error(
                 'Fail to get update for %s: %s', {
-                    'user': '%s' % user.username,
+                    'user': '%d' % user_id,
                     'collection': collection,
                     'date': date
                 }, e)
-        except Exception as e:
-            raise get_update.retry(exc=e)
+            update.update = 'Fail to get update: %s' % e
+            update.time_updated = time.time()
         else:
-            item = model.query.get((user.id, date))
-            if not item:
-                item = model(user=user, date=date)
+            item = model(user=user, date=date)
             item.update(data)
-            db.session.commit()
-            return data, item
+            db.session.merge(item)
+            update.update = 'update success'
+            update.time_updated = time.time()
     else:
-        logger.error('User %d not found', user_id)
+        update.update = 'User %d not found' % user_id
+        update.time_updated = time.time()
+    # will never reach here if any unhandled exception happened,
+    # like request timeout. In that case, the 'update_time' field
+    # will be empty. We may setup a cronjob to check them later
+    db.session.merge(update)
+    db.session.commit()
