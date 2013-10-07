@@ -22,6 +22,7 @@ class User(db.Model):
     gender = db.Column(db.VARCHAR(length=10), nullable=False)
     house_id = db.Column(db.INTEGER(display_width=11),
                          db.ForeignKey('house.id'))
+    company_id = db.Column(db.INTEGER, db.ForeignKey('company.id'))
     username = db.Column(db.VARCHAR(length=20), nullable=False)
     email = db.Column(db.VARCHAR(length=40))
     admin = db.Column(db.BOOLEAN, nullable=False)
@@ -37,6 +38,18 @@ class User(db.Model):
 
     def __unicode__(self):
         return u'[%s]%s' % (self.id, self.username)
+
+
+class Company(db.Model):
+    __tablename__ = 'company'
+    id = db.Column(db.INTEGER, primary_key=True)
+    name = db.Column(db.String(length=128), nullable=False)
+    description = db.Column(db.String(length=255))
+    profile_pic = db.Column(db.VARCHAR(length=200))
+    employees = db.relationship(User, backref='company')
+
+    def __unicode__(self):
+        return u'[%s]%s' % (self.id, self.name)
 
 
 class Survey(db.Model):
