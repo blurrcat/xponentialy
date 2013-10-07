@@ -1,17 +1,22 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
-import logging
+from flask import current_app
 import pytest
-from xponentialy.tasks import task
+
+from xponentialy import config_app
+from xponentialy.tasks import Task, init_app
+app, _ = config_app()
+init_app(app)
 
 
 def test_task():
-    @task(1, 1, logging)
-    def add_task(a, b):
-        return a + b
+    with app.app_context():
+        @Task(1, 1, current_app.logger)
+        def add_task(a, b):
+            return a + b
 
-    result = add_task(1, 2)
-    assert result.get() == 3
+        result = add_task(1, 2)
+        assert result.get() == 3
 
 
 def test_retry():
@@ -19,12 +24,14 @@ def test_retry():
     def assert_err(msg, *args):
         print msg % args
         assert 'exception' in msg
-    logging.error = assert_err
 
-    @task(2, 1, logging)
-    def add_task(a, b):
-        return a + b
+    with app.app_context():
+        current_app.logger.error = assert_err
 
-    result = add_task(1, '2')
-    with pytest.raises(TypeError):
-        result.get(timeout=3)
+        @Task(2, 1, current_app)
+        def add_task(a, b):
+            return a + b
+
+        result = add_task(1, '2')
+        with pytest.raises(TypeError):
+            result.get(timeout=3)

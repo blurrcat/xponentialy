@@ -1,7 +1,7 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
-from gevent import monkey
-monkey.patch_all()
+# from gevent import monkey
+# monkey.patch_all()
 
 from gevent import spawn, sleep
 from gevent.event import AsyncResult
@@ -17,6 +17,7 @@ from xponentialy.models.fitbit import get_model_by_name
 class Task(object):
     RETRY_INTERVAL = 1
     RETRY_MAX = 0
+    app = None
 
     def __init__(self, max_retry=None, retry_interval=None, logger=None):
         self.max_retry = max_retry or Task.RETRY_MAX
@@ -26,6 +27,13 @@ class Task(object):
         self.tried = 0
 
     def __call__(self, f):
+
+        def call(*args, **kwargs):
+            if self.logger:
+                self.logger.info('Start task %s(%s, %s)', f, *args, **kwargs)
+            with Task.app.app_context():
+                return f(*args, **kwargs)
+
         def inner(*args, **kwargs):
             def on_exception(greenlet):
                 if self.tried < self.max_retry:
@@ -48,9 +56,12 @@ class Task(object):
                     self.result.set_exception(greenlet.exception)
 
             def on_value(greenlet):
+                if self.logger:
+                    self.logger.info('Finished task %s(%s, %s)',
+                                      f, *args, **kwargs)
                 self.result.set(greenlet.value)
 
-            g_task = spawn(f, *args, **kwargs)
+            g_task = spawn(call, *args, **kwargs)
             g_task.link_exception(on_exception)
             g_task.link_value(on_value)
 
@@ -62,9 +73,10 @@ def init_app(app):
     conf = app.config
     Task.RETRY_INTERVAL = conf['TASK_RETRY_INTERVAL']
     Task.RETRY_MAX = conf['TASK_RETRY_MAX']
+    Task.app = app
 
 
-@Task
+@Task()
 def subscribe(user_id, subscriber_id, delete=False, collection=None):
     """
     Subscribe/unsubscribe a user for his fitbit data
@@ -110,7 +122,7 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
         logger.error('User %d not found', user_id)
 
 
-@Task
+@Task()
 def get_update(collection, date, user_id):
     logger = current_app.logger
     model = get_model_by_name(collection)

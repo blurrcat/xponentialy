@@ -19,7 +19,7 @@ def notification():
     updates = request.files['updates']
     updates = json.load(updates)
     for update in updates:
-        get_update.delay(
+        get_update(
             update['collectionType'],
             update['date'],
             update['subscriptionId']
