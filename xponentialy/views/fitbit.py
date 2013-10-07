@@ -4,7 +4,6 @@ from flask import Response
 from flask import json
 
 from xponentialy.tasks import get_update
-from xponentialy.tasks import celery_test_task
 
 fitbit_bp = Blueprint('fitbit', __name__)
 
@@ -25,11 +24,4 @@ def notification():
             update['date'],
             update['subscriptionId']
         )
-    return Response(status=204)
-
-
-@fitbit_bp.route('/celery_test', methods=['POST'])
-def celery_test():
-    data = request.form
-    celery_test_task.delay(int(data['a']), int(data['b']))
     return Response(status=204)
