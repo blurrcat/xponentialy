@@ -45,7 +45,7 @@ class Company(db.Model):
     id = db.Column(db.INTEGER, primary_key=True)
     name = db.Column(db.String(length=128), nullable=False)
     description = db.Column(db.String(length=255))
-    profile_pic = db.Column(db.VARCHAR(length=200), nullable=False)
+    profile_pic = db.Column(db.VARCHAR(length=200))
     employees = db.relationship(User, backref='company')
 
     def __unicode__(self):
