@@ -10,10 +10,6 @@ from xponentialy.models import User, Role
 security = Security()
 
 
-def confirm():
-    return 'hi'
-
-
 def _gen_password():
     conf = current_app.config
     return ''.join(random.choice(
@@ -23,4 +19,3 @@ def _gen_password():
 def create_views(app, db):
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security.init_app(app, datastore=user_datastore)
-    app.add_url_rule('/auth/confirm2', view_func=confirm)

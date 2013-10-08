@@ -25,3 +25,10 @@ def notification():
             update['subscriptionId']
         )
     return Response(status=204)
+
+
+@fitbit_bp.route('/connect')
+def connect():
+    return """
+    Let's connect to fitbit!
+    """

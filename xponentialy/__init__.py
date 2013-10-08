@@ -43,11 +43,15 @@ def create_app():
 
     from flask.ext.restless import APIManager
     from flask.ext.admin import Admin
+    from flask.ext.mail import Mail
     from xponentialy import views, tasks
     from xponentialy.models import User, Role
 
     # tasks
     tasks.init_app(app)
+
+    # mail
+    Mail(app)
 
     # security
     views.auth.create_views(app, db)
