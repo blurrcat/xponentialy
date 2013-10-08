@@ -1,12 +1,9 @@
-import time
-
 from flask import Blueprint
 from flask import request
 from flask import Response
 from flask import json
 
 from xponentialy.tasks import get_update
-from xponentialy.models import Update
 
 fitbit_bp = Blueprint('fitbit', __name__)
 

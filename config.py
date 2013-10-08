@@ -7,6 +7,7 @@
 """
 Default config for xponentialy
 """
+import string
 
 DEBUG = True
 
@@ -26,3 +27,17 @@ SUBSCRIPTION_ID = ''
 # Tasks
 TASK_RETRY_INTERVAL = 30
 TASK_RETRY_MAX = 3
+
+# Mail
+MAIL_DEFAULT_SENDER = 'no-reply@demo.xponentialy.com'
+
+# Security
+SECURITY_REGISTERABLE = True
+SECURITY_CONFIRMABLE = True
+SECURITY_RECOVERABLE = True
+SECURITY_TRACKABLE = True
+SECURITY_CHANGEABLE = True
+SECURITY_URL_PREFIX = '/auth'
+
+AUTH_PASSWD_LEN = 8
+AUTH_PASSWD_ALPHABET = string.letters + string.digits

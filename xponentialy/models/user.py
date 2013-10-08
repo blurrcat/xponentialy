@@ -6,35 +6,64 @@
 
 """
 from . import db
+from flask.ext.security import UserMixin, RoleMixin
 
 
-class User(db.Model):
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
+
+    def __unicode__(self):
+        return u'%s:%s' % (self.name, self.description[:20] + '..')
+
+
+class User(db.Model, UserMixin):
     __tablename__ = 'user'
 
     id = db.Column(db.INTEGER(display_width=11),
                    primary_key=True, nullable=False)
     first_name = db.Column(db.VARCHAR(length=20))
     last_name = db.Column(db.VARCHAR(length=20))
-    fitbit_id = db.Column(db.VARCHAR(length=10), nullable=False)
-    oauth_token = db.Column(db.VARCHAR(length=40), nullable=False)
-    oauth_secret = db.Column(db.VARCHAR(length=40), nullable=False)
-    profile_pic = db.Column(db.VARCHAR(length=200), nullable=False)
-    gender = db.Column(db.VARCHAR(length=10), nullable=False)
+    fitbit_id = db.Column(db.VARCHAR(length=10))
+    oauth_token = db.Column(db.VARCHAR(length=40))
+    oauth_secret = db.Column(db.VARCHAR(length=40))
+    profile_pic = db.Column(db.VARCHAR(length=200))
+    gender = db.Column(db.VARCHAR(length=10))
     house_id = db.Column(db.INTEGER(display_width=11),
                          db.ForeignKey('house.id'))
     company_id = db.Column(db.INTEGER, db.ForeignKey('company.id'))
-    username = db.Column(db.VARCHAR(length=20), nullable=False)
-    email = db.Column(db.VARCHAR(length=40))
-    admin = db.Column(db.BOOLEAN, nullable=False)
-    phantom = db.Column(db.BOOLEAN, nullable=False)
-    staff = db.Column(db.BOOLEAN, nullable=False)
-    leader = db.Column(db.BOOLEAN, nullable=False)
+    username = db.Column(db.VARCHAR(length=20))
+    email = db.Column(db.VARCHAR(length=40), nullable=False, unique=True)
+    password = db.Column(db.String(255), nullable=False)
+    active = db.Column(db.Boolean)
+    confirmed_at = db.Column(db.DateTime())
+    admin = db.Column(db.BOOLEAN)
+    phantom = db.Column(db.BOOLEAN)
+    staff = db.Column(db.BOOLEAN)
+    leader = db.Column(db.BOOLEAN)
     points = db.Column(db.INTEGER(display_width=11))
-    fb = db.Column(db.BOOLEAN, nullable=False)
-    badge_email_unsub = db.Column(db.BOOLEAN, nullable=False)
-    daily_email_unsub = db.Column(db.BOOLEAN, nullable=False)
-    challenge_email_unsub = db.Column(db.BOOLEAN, nullable=False)
-    hide_progress = db.Column(db.BOOLEAN, nullable=False)
+    fb = db.Column(db.BOOLEAN, default=False)
+    badge_email_unsub = db.Column(db.BOOLEAN, default=True)
+    daily_email_unsub = db.Column(db.BOOLEAN, default=True)
+    challenge_email_unsub = db.Column(db.BOOLEAN, default=True)
+    hide_progress = db.Column(db.BOOLEAN, default=False)
+
+    last_login_at = db.Column(db.DateTime())
+    current_login_at = db.Column(db.DateTime())
+    last_login_ip = db.Column(db.DateTime())
+    current_login_ip = db.Column(db.String(50))
+    login_count = db.Column(db.String(50))
+
+    roles = db.relationship(
+        'Role',
+        secondary=db.Table(
+            'roles_users',
+            db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+            db.Column('role_id', db.Integer(), db.ForeignKey('role.id')),
+        ),
+        backref=db.backref('users', lazy='dynamic')
+    )
 
     def __unicode__(self):
         return u'[%s]%s' % (self.id, self.username)

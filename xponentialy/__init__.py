@@ -44,12 +44,19 @@ def create_app():
     from flask.ext.restless import APIManager
     from flask.ext.admin import Admin
     from xponentialy import views, tasks
+    from xponentialy.models import User, Role
 
+    # tasks
     tasks.init_app(app)
 
+    # security
+    views.auth.create_views(app, db)
+
+    # REST API
     api = APIManager(app, flask_sqlalchemy_db=db)
     views.api.create_views(api)
 
+    # admin
     admin = Admin(app)
     views.admin.create_views(admin, db)
 
