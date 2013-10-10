@@ -21,6 +21,13 @@ SECRET_KEY = '\x03\xea\xd2`\x9a8P\x86>\xf4 \xfe3br^e\xbfw\xf1'
 # Fitbit
 FITBIT_KEY = ''
 FITBIT_SECRET = ''
+FITBIT_OAUTH = {
+    'consumer_key': FITBIT_KEY,
+    'consumer_secret': FITBIT_SECRET,
+    'request_token_url': 'http://api.fitbit.com/oauth/request_token',
+    'access_token_url': 'http://api.fitbit.com/oauth/access_token',
+    'authorize_url': 'http://www.fitbit.com/oauth/authorize',
+}
 SUBSCRIPTION_COLLECTION = None
 SUBSCRIPTION_ID = ''
 

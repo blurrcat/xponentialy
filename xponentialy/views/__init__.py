@@ -1,5 +1,5 @@
 from flask import Blueprint
-from flask.ext.login import login_required
+from flask.ext.security import login_required
 
 import admin
 import api
