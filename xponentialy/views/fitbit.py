@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, current_app
 from flask import request
 from flask import Response
 from flask import json
@@ -8,6 +8,7 @@ from flask import redirect
 from flask.ext.security import login_required, current_user
 from flask_oauthlib.client import OAuth
 from xponentialy.models import User, db
+from xponentialy.tasks import subscribe
 
 from xponentialy.tasks import get_update
 
@@ -60,13 +61,17 @@ def connect():
 @fitbit_bp.route('/authorized')
 @fitbit_oauth.authorized_handler
 def authorized(resp):
-    next_url = request.args.get('next') or url_for('index')
     if resp is None:
-        flash(u'You denied the request to sign in.')
-        return redirect(next_url)
+        flash(u'You denied the request to connect Xponentialy to Fitbit.')
+        return redirect(url_for('confirmed'))
     user = User.query.get(request.args.get('user_id'))
     user.oauth_token = resp['access_token']
     user.oauth_secret = resp['oauth_secret']
+    conf = current_app.config
     db.session.commit()
-    return redirect(next_url)
+    for collection in conf['FITBIT_SUBSCRIPTION_COLLECTIONS']:
+        subscribe(user.id, conf['FITBIT_SUBSCRIPTION_ID'],
+                  collection=collection)
+    flash(u'Successfully connected to fitbit')
+    return redirect(url_for('user_info'))
 

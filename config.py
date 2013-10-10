@@ -28,8 +28,8 @@ FITBIT_OAUTH = {
     'access_token_url': 'http://api.fitbit.com/oauth/access_token',
     'authorize_url': 'http://www.fitbit.com/oauth/authorize',
 }
-SUBSCRIPTION_COLLECTION = None
-SUBSCRIPTION_ID = ''
+FITBIT_SUBSCRIPTION_COLLECTIONS = ['activities']
+FITBIT_SUBSCRIPTION_ID = 'ec2-dev'
 
 # Tasks
 TASK_RETRY_INTERVAL = 30
