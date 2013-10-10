@@ -53,7 +53,7 @@ class User(db.Model, UserMixin):
     current_login_at = db.Column(db.DateTime())
     last_login_ip = db.Column(db.DateTime())
     current_login_ip = db.Column(db.String(50))
-    login_count = db.Column(db.String(50))
+    login_count = db.Column(db.Integer())
 
     roles = db.relationship(
         'Role',
