@@ -66,7 +66,8 @@ def authorized(resp):
         return redirect(url_for('confirmed'))
     user = User.query.get(int(request.args.get('user_id')))
     user.oauth_token = resp['oauth_token']
-    user.oauth_secret = resp['oauth_secret']
+    user.oauth_secret = resp['oauth_token_secret']
+    user.fitbit_id = resp['encoded_user_id']
     conf = current_app.config
     db.session.commit()
     for collection in conf['FITBIT_SUBSCRIPTION_COLLECTIONS']:
