@@ -51,7 +51,7 @@ def confirmed():
 def connect():
     return fitbit_oauth.authorize(
         url_for(
-            'authorized',
+            '.authorized',
             next=request.args.get('next') or request.referrer or None,
             user_id=current_user.id
         )
@@ -64,8 +64,8 @@ def authorized(resp):
     if resp is None:
         flash(u'You denied the request to connect Xponentialy to Fitbit.')
         return redirect(url_for('confirmed'))
-    user = User.query.get(request.args.get('user_id'))
-    user.oauth_token = resp['access_token']
+    user = User.query.get(int(request.args.get('user_id')))
+    user.oauth_token = resp['oauth_token']
     user.oauth_secret = resp['oauth_secret']
     conf = current_app.config
     db.session.commit()

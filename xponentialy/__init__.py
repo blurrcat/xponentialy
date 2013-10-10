@@ -22,6 +22,8 @@ def config_app():
         app.logger.warning(
             'Cannot load DEPLOYMENT_CONFIG, ignore; os.environ: %s',
             os.environ)
+    app.config['FITBIT_OAUTH']['consumer_key'] = app.config['FITBIT_KEY']
+    app.config['FITBIT_OAUTH']['consumer_secret'] = app.config['FITBIT_SECRET']
     from models import db
     db.init_app(app)
     return app, db
