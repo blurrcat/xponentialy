@@ -29,8 +29,7 @@ TASK_RETRY_INTERVAL = 30
 TASK_RETRY_MAX = 3
 
 # Mail
-MAIL_DEFAULT_SENDER = 'no-reply@demo.xponential.ly'
-MAIL_SERVER = 'demo.xponential.ly'
+MAIL_SERVER = 'localhost'
 
 # Security
 SECURITY_REGISTERABLE = True
@@ -38,8 +37,8 @@ SECURITY_CONFIRMABLE = True
 SECURITY_RECOVERABLE = True
 SECURITY_TRACKABLE = True
 SECURITY_CHANGEABLE = True
+SECURITY_EMAIL_SENDER = 'no-reply@demo.xponential.ly'
 SECURITY_URL_PREFIX = '/auth'
 SECURITY_POST_CONFIRM_VIEW = '/fitbit/connect'
-
-AUTH_PASSWD_LEN = 8
-AUTH_PASSWD_ALPHABET = string.letters + string.digits
+SECURITY_PASSWORD_HASH = 'bcrypt'
+SECURITY_PASSWORD_SALT = '___stupid_dev_salt__'
