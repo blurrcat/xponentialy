@@ -22,6 +22,7 @@ SECRET_KEY = '\x03\xea\xd2`\x9a8P\x86>\xf4 \xfe3br^e\xbfw\xf1'
 FITBIT_KEY = ''
 FITBIT_SECRET = ''
 FITBIT_OAUTH = {
+    'base_url': 'https://api.fitbit.com',
     'request_token_url': 'http://api.fitbit.com/oauth/request_token',
     'access_token_url': 'http://api.fitbit.com/oauth/access_token',
     'authorize_url': 'http://www.fitbit.com/oauth/authorize',
