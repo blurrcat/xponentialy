@@ -64,6 +64,8 @@ def create_app():
     admin = Admin(app)
     views.admin.create_views(admin, db)
 
+    app.register_blueprint(views.xp_bp)
+
     app.register_blueprint(views.fitbit.fitbit_bp, url_prefix='/fitbit')
 
     return app
