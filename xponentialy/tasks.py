@@ -103,7 +103,7 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
             method = 'POST'
         try:
             resp = client.subscription(
-                subscriber_id, user_id, collection, method=method)
+                user_id, subscriber_id, collection, method=method)
         except HTTPException as e:
             logger.error(
                 'Subscription error: %s; user_id: %s, '
@@ -125,6 +125,11 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
 @Task()
 def get_update(collection, date, user_id):
     logger = current_app.logger
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        logger.error('Invalid user_id: %s', user_id)
+        return
     model = get_model_by_name(collection)
     if not model:
         logger.warning(
