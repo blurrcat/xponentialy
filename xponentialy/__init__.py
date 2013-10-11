@@ -8,6 +8,7 @@
 
 """
 __version__ = '0.2.0a1'
+import patch  # patch bugs in third-party libs
 from flask import Flask
 
 
