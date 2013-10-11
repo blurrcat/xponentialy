@@ -3,6 +3,9 @@ Flask-Admin==1.0.6
 Flask-Migrate==0.1.4
 Flask-Restless==0.12.0
 Flask-SQLAlchemy==1.0
+Flask-Security>=1.6.9
+Flask-OAuthlib==0.3.3
 PyMySQL==0.5
 fitbit==0.0.2
 gevent==0.13.8
+bcrypt==1.0.2
