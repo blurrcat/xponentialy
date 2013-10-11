@@ -60,7 +60,7 @@ def create_app():
 
     # REST API
     api = APIManager(app, flask_sqlalchemy_db=db)
-    views.api.create_views(api)
+    views.api.create_views(app, api)
 
     # admin
     admin = Admin(app)
