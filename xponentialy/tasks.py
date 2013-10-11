@@ -107,7 +107,7 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
         except HTTPException as e:
             logger.error(
                 'Subscription error: %s; user_id: %s, '
-                'subscription_id: %s, collection: %s', e, user_id,
+                'subscriber_id: %s, collection: %s', repr(e), user_id,
                 subscriber_id, collection)
         else:
             # resp:
@@ -126,6 +126,7 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
 def get_update(collection, date, user_id):
     logger = current_app.logger
     try:
+        user_id = user_id.split('-')[0]
         user_id = int(user_id)
     except ValueError:
         logger.error('Invalid user_id: %s', user_id)
