@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask.ext.security import login_required
 
 import admin
-import api
+import api_mock
 import auth
 from .fitbit import notification
 

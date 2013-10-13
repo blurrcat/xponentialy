@@ -44,7 +44,6 @@ def create_db_manager():
 def create_app():
     app, db = config_app()
 
-    from flask.ext.restless import APIManager
     from flask.ext.admin import Admin
     from flask.ext.mail import Mail
     from xponentialy import views, tasks
@@ -60,8 +59,9 @@ def create_app():
     views.auth.create_views(app, db)
 
     # REST API
-    api = APIManager(app, flask_sqlalchemy_db=db)
-    views.api.create_views(app, api)
+    # api = APIManager(app, flask_sqlalchemy_db=db)
+    # views.api.create_views(app, api)
+    app.register_blueprint(views.api_mock.mock, url_prefix='/api/1')
 
     # admin
     admin = Admin(app)
