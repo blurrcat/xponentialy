@@ -7,9 +7,9 @@
 """
 Launch the application. Used by EB.
 """
-from xponentialy import create_app
+from xponentialy import load_app
 
-app = create_app()
+app = load_app()
 
 if __name__ == '__main__':
     app.run()

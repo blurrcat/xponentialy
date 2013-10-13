@@ -7,14 +7,17 @@
 """
 Default config for xponentialy
 """
-import string
 
 DEBUG = True
 
-# SQLAlchemy
-SQLALCHEMY_DATABASE_URI = (
-    'mysql+pymysql://root:root@127.0.0.1:3306/xponentialy_dev')
-SQLALCHEMY_ECHO = True
+# Database
+DATABASE = {
+    'name': 'xponentialy_peewee',
+    'engine': 'peewee.MySQLDatabase',
+    'user': 'root',
+    'passwd': 'root',
+    'threadlocals': True,
+}
 
 SECRET_KEY = '\x03\xea\xd2`\x9a8P\x86>\xf4 \xfe3br^e\xbfw\xf1'
 
