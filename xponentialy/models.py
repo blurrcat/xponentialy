@@ -2,9 +2,15 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+from flask.ext.peewee.auth import BaseUser
 from peewee import *
-from flask.ext.security import RoleMixin, UserMixin
+
 from xponentialy import db
+
+__all__ = ['House', 'User', 'Company', 'Survey', 'Activity',
+           'IntradayActivity', 'Sleep', 'Update', 'Badge', 'UserBadge',
+           'ForumThread', 'Challenge', 'ChallengeParticipant', 'InvalidPeriod',
+           'Notification', 'Postsubscription', 'Emailmessage', 'Threadpost']
 
 
 class House(db.Model):
@@ -14,8 +20,11 @@ class House(db.Model):
     class Meta:
         db_table = 'house'
 
+    def __unicode__(self):
+        return self.name
 
-class User(db.Model, UserMixin):
+
+class User(db.Model, BaseUser):
     active = IntegerField(null=True)
     admin = IntegerField(null=True)
     badge_email_unsub = IntegerField(null=True)
@@ -49,25 +58,8 @@ class User(db.Model, UserMixin):
     class Meta:
         db_table = 'user'
 
-
-class Role(db.Model, RoleMixin):
-    description = CharField(null=True)
-    name = CharField(unique=True)
-
-    class Meta:
-        db_table = 'role'
-
-
-class RolesUsers(db.Model):
-    role = ForeignKeyField(db_column='role_id', rel_model=Role,
-                           related_name='users')
-    user = ForeignKeyField(db_column='user_id', rel_model=User,
-                           related_name='roles')
-    name = property(lambda self: self.role.name)
-    description = property(lambda self: self.role.description)
-
-    class Meta:
-        db_table = 'roles_users'
+    def __unicode__(self):
+        return self.username
 
 
 class Company(db.Model):
@@ -77,6 +69,9 @@ class Company(db.Model):
 
     class Meta:
         db_table = 'company'
+
+    def __unicode__(self):
+        return self.name
 
 
 class Survey(db.Model):
@@ -101,8 +96,10 @@ class Survey(db.Model):
     class Meta:
         db_table = 'survey'
 
+    def __unicode__(self):
+        return u'survey[%d]' % self.id
 
-# fitbit
+
 class Activity(db.Model):
     active_score = IntegerField(null=True)
     activity_calories = IntegerField(null=True)
@@ -122,6 +119,9 @@ class Activity(db.Model):
     class Meta:
         db_table = 'activity'
 
+    def __unicode__(self):
+        return u'Activity of %s on %s' % (self.user_id, self.date)
+
 
 class IntradayActivity(db.Model):
     activity_time = DateTimeField()
@@ -134,6 +134,9 @@ class IntradayActivity(db.Model):
 
     class Meta:
         db_table = 'intradayactivity'
+
+    def __unicode__(self):
+        return 'IntradayActivity of %s at %s' % (self.user, self.activity_time)
 
 
 class Sleep(db.Model):
@@ -151,6 +154,9 @@ class Sleep(db.Model):
     class Meta:
         db_table = 'sleep'
 
+    def __unicode__(self):
+        return u'Sleep of %s on %s' % (self.user, self.date)
+
 
 class Update(db.Model):
     time_updated = DateTimeField(null=True)
@@ -160,6 +166,10 @@ class Update(db.Model):
 
     class Meta:
         db_table = 'updates'
+
+    def __unicode__(self):
+        return u'type: %s; user: %s; time: %s' % (
+            self.type, self.user, self.time_updated)
 
 
 __models = {
@@ -182,6 +192,9 @@ class Badge(db.Model):
     class Meta:
         db_table = 'badge'
 
+    def __unicode__(self):
+        return self.name
+
 
 class UserBadge(db.Model):
     badge = ForeignKeyField(db_column='badge_id', rel_model=Badge)
@@ -190,6 +203,9 @@ class UserBadge(db.Model):
 
     class Meta:
         db_table = 'userbadge'
+
+    def __unicode__(self):
+        return '%s earned %s on %s' % (self.user, self.badge, self.date)
 
 
 class ForumThread(db.Model):
@@ -202,6 +218,9 @@ class ForumThread(db.Model):
 
     class Meta:
         db_table = 'forumthread'
+
+    def __unicode__(self):
+        return self.message[:20]
 
 
 class Challenge(db.Model):
@@ -223,6 +242,9 @@ class Challenge(db.Model):
     class Meta:
         db_table = 'challenge'
 
+    def __unicode__(self):
+        return self.description
+
 
 class ChallengeParticipant(db.Model):
     category = IntegerField(null=True)
@@ -238,6 +260,9 @@ class ChallengeParticipant(db.Model):
     class Meta:
         db_table = 'challengeparticipant'
 
+    def __unicode__(self):
+        return u'%s in challenge %s' % (self.user, self.challenge)
+
 
 class InvalidPeriod(db.Model):
     end_date = DateField()
@@ -246,6 +271,9 @@ class InvalidPeriod(db.Model):
 
     class Meta:
         db_table = 'invalidperiod'
+
+    def __unicode__(self):
+        return u'%s: %s - %s' % (self.user, self.start_date, self.end_date)
 
 
 class Notification(db.Model):
@@ -257,6 +285,9 @@ class Notification(db.Model):
 
     class Meta:
         db_table = 'notification'
+
+    def __unicode__(self):
+        return self.description
 
 
 class Postsubscription(db.Model):
@@ -274,6 +305,9 @@ class Emailmessage(db.Model):
     class Meta:
         db_table = 'emailmessage'
 
+    def __unicode__(self):
+        return self.message
+
 
 class Threadpost(db.Model):
     comment = CharField()
@@ -284,3 +318,6 @@ class Threadpost(db.Model):
 
     class Meta:
         db_table = 'threadpost'
+
+    def __unicode__(self):
+        return self.comment[:20]

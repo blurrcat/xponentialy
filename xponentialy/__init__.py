@@ -32,9 +32,5 @@ db.connect_db()
 
 
 def load_app():
-    # security
-    from flask.ext.security import Security, PeeweeUserDatastore
-    from xponentialy.models import User, Role, RolesUsers
-    user_datastore = PeeweeUserDatastore(db, User, Role, RolesUsers)
-    Security(app, user_datastore)
+    import admin
     return app
