@@ -7,11 +7,11 @@ from xponentialy import app, db
 from xponentialy import models
 
 auth = Auth(app, db)
-admin = Admin(app, auth)
+admin = Admin(app, auth, branding='Xponentialy Admin')
 
 
 class UserAdmin(ModelAdmin):
-    exclude = ['password']
+    exclude = ['password', 'oauth_secret']
 
 admin.register(models.User, UserAdmin)
 registered = ['User']
