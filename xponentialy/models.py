@@ -40,7 +40,8 @@ class User(db.Model, BaseUser):
     fitbit = CharField(null=True, db_column='fitbit_id')
     gender = CharField(null=True)
     hide_progress = IntegerField(null=True)
-    house = ForeignKeyField(null=True, db_column='house_id', rel_model=House)
+    house = ForeignKeyField(null=True, db_column='house_id', rel_model=House,
+                            related_name='users')
     last_login_at = DateTimeField(null=True)
     last_login_ip = DateTimeField(null=True)
     last_name = CharField(null=True)
@@ -54,6 +55,8 @@ class User(db.Model, BaseUser):
     profile_pic = CharField(null=True)
     staff = IntegerField(null=True)
     username = CharField(null=True, unique=True)
+
+    challenge_num = property(lambda self: self.challenges.count())
 
     class Meta:
         db_table = 'user'
@@ -91,7 +94,8 @@ class Survey(db.Model):
     q7 = CharField(null=True)
     q8 = CharField(null=True)
     q9 = CharField(null=True)
-    user = ForeignKeyField(db_column='user_id', rel_model=User)
+    user = ForeignKeyField(db_column='user_id', rel_model=User,
+                           related_name='survey')
 
     class Meta:
         db_table = 'survey'
@@ -114,7 +118,8 @@ class Activity(db.Model):
     min_sedentary = IntegerField(null=True)
     min_veryactive = IntegerField(null=True)
     steps = IntegerField(null=True)
-    user = ForeignKeyField(db_column='user_id', rel_model=User)
+    user = ForeignKeyField(db_column='user_id', rel_model=User,
+                           related_name='activities')
 
     class Meta:
         db_table = 'activity'
@@ -130,7 +135,8 @@ class IntradayActivity(db.Model):
     elevation = FloatField(null=True)
     floors = IntegerField(null=True)
     steps = IntegerField(null=True)
-    user = ForeignKeyField(db_column='user_id', rel_model=User)
+    user = ForeignKeyField(db_column='user_id', rel_model=User,
+                           related_name='intraday_activites')
 
     class Meta:
         db_table = 'intradayactivity'
@@ -149,7 +155,8 @@ class Sleep(db.Model):
     start_time = DateTimeField(null=True)
     time_asleep = IntegerField(null=True)
     total_time = IntegerField(null=True)
-    user = ForeignKeyField(db_column='user_id', rel_model=User)
+    user = ForeignKeyField(db_column='user_id', rel_model=User,
+                           related_name='sleeps')
 
     class Meta:
         db_table = 'sleep'
@@ -162,7 +169,8 @@ class Update(db.Model):
     time_updated = DateTimeField(null=True)
     type = CharField()
     update = CharField()
-    user = ForeignKeyField(db_column='user_id', rel_model=User)
+    user = ForeignKeyField(db_column='user_id', rel_model=User,
+                           related_name='updates')
 
     class Meta:
         db_table = 'updates'
@@ -210,9 +218,9 @@ class UserBadge(db.Model):
 
 class ForumThread(db.Model):
     archived = IntegerField()
-    challenge = IntegerField(db_column='challenge_id')
     create_time = DateTimeField(default=datetime.datetime.utcnow)
-    creator = ForeignKeyField(db_column='creator_id', rel_model=User)
+    creator = ForeignKeyField(db_column='creator_id', rel_model=User,
+                              related_name='threads')
     message = CharField()
     tutor_only = IntegerField()
 
@@ -236,7 +244,7 @@ class Challenge(db.Model):
     start_time = DateTimeField(default=datetime.datetime.utcnow)
     steps_value = IntegerField(null=True)
     thread = ForeignKeyField(null=True, db_column='thread_id',
-                             rel_model=ForumThread)
+                             rel_model=ForumThread, related_name='challenge')
     title = CharField()
 
     class Meta:
@@ -248,14 +256,16 @@ class Challenge(db.Model):
 
 class ChallengeParticipant(db.Model):
     category = IntegerField(null=True)
-    challenge = ForeignKeyField(db_column='challenge_id', rel_model=Challenge)
+    challenge = ForeignKeyField(db_column='challenge_id', rel_model=Challenge,
+                                related_name='participants')
     complete_time = DateTimeField(null=True)
     end_time = DateTimeField()
     id = BigIntegerField()
     inactive = IntegerField(null=True)
     progress = FloatField(null=True, default=0)
     start_time = DateTimeField(null=True, default=datetime.datetime.utcnow)
-    user = ForeignKeyField(db_column='user_id', rel_model=User)
+    user = ForeignKeyField(db_column='user_id', rel_model=User,
+                           related_name='challenges')
 
     class Meta:
         db_table = 'challengeparticipant'
@@ -267,7 +277,8 @@ class ChallengeParticipant(db.Model):
 class InvalidPeriod(db.Model):
     end_date = DateField()
     start_date = DateField()
-    user = ForeignKeyField(db_column='user_id', rel_model=User)
+    user = ForeignKeyField(db_column='user_id', rel_model=User,
+                           related_name='invalid_periods')
 
     class Meta:
         db_table = 'invalidperiod'
@@ -281,7 +292,8 @@ class Notification(db.Model):
     post_facebook = IntegerField()
     post_pic = CharField(null=True)
     url = CharField(null=True)
-    user = ForeignKeyField(db_column='user_id', rel_model=User)
+    user = ForeignKeyField(db_column='user_id', rel_model=User,
+                           related_name='notifications')
 
     class Meta:
         db_table = 'notification'
@@ -312,9 +324,11 @@ class Emailmessage(db.Model):
 class Threadpost(db.Model):
     comment = CharField()
     comment_time = DateTimeField(default=datetime.datetime.utcnow)
-    commenter = ForeignKeyField(db_column='commenter_id', rel_model=User)
+    commenter = ForeignKeyField(db_column='commenter_id', rel_model=User,
+                                related_name='comments')
     deleted = BooleanField(default=False)
-    thread = ForeignKeyField(db_column='thread_id', rel_model=ForumThread)
+    thread = ForeignKeyField(db_column='thread_id', rel_model=ForumThread,
+                             related_name='comments')
 
     class Meta:
         db_table = 'threadpost'
