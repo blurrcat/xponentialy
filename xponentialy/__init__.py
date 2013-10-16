@@ -32,5 +32,5 @@ db.connect_db()
 
 
 def load_app():
-    import admin
+    import views
     return app

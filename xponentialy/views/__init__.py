@@ -3,7 +3,7 @@ from flask.ext.security import login_required
 
 import admin
 import api
-import auth
+import leaderborad
 from .fitbit import notification
 
 xp_bp = Blueprint('xponentialy', 'xponentialy')
