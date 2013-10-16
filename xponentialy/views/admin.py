@@ -7,16 +7,23 @@
 """
 
 """
-from flask.ext.admin.contrib.sqlamodel import ModelView
-from sqlalchemy.ext.declarative import DeclarativeMeta
+from flask.ext.peewee.admin import Admin, ModelAdmin
+
+from xponentialy import app, auth
+from xponentialy import models
 
 
-def create_views(admin_manager, db):
-    """
-    Create API endpoints using a bounded instance of
-    :class:`flask.ext.admin.Admin`.
-    """
-    from xponentialy import models
-    for i in models.__dict__.values():
-        if isinstance(i, DeclarativeMeta):
-            admin_manager.add_view(ModelView(i, db.session))
+admin = Admin(app, auth, branding='Xponentialy Admin')
+
+
+class UserAdmin(ModelAdmin):
+    exclude = ['password', 'oauth_secret']
+
+admin.register(models.User, UserAdmin)
+registered = ['User']
+for name in models.__all__:
+    if name not in registered:
+        admin.register(getattr(models, name))
+
+
+admin.setup()

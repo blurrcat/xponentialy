@@ -1,8 +1,5 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
-from gevent import monkey
-monkey.patch_all()
-
 from datetime import datetime
 from gevent import spawn, sleep
 from gevent.event import AsyncResult
