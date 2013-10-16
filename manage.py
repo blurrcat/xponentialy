@@ -6,7 +6,7 @@
 
 """
 from xponentialy import load_app
-from flask.ext.script import Manager, prompt_bool, prompt, prompt_pass
+from flask.ext.script import Manager, prompt, prompt_pass, prompt_bool
 from flask.ext.script.commands import ShowUrls
 
 
@@ -27,29 +27,33 @@ def create_all():
 
 
 @auth.command
-def create_admin():
+def create_user():
+    """
+    Create a user
+    """
     import re
     import sys
     from xponentialy.models import User
     from flask.ext.peewee.utils import make_password
-    email = prompt('Email for admin')
+    email = prompt('Email')
     if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$',
                     email):
         print 'Error: Invalid email address'
         sys.exit(-1)
     name = email.split('@')[0]
-    name = prompt('Username for admin', default=name)
+    name = prompt('Username', default=name)
     passwd = prompt_pass('Password')
     passwd2 = prompt_pass('Password again')
     if passwd2 != passwd:
         print 'Error: Password not match'
         sys.exit(-1)
+    admin = prompt_bool('Is Admin?', default=False)
     User.create(username=name, password=make_password(passwd), email=email,
-                admin=True, active=True)
-    print 'Admin created.'
+                admin=admin, active=True)
+    print 'User created.'
 
 
 manager.add_command('db', db)
-manager.add_command('auth', auth)
+manager.add_command('accounts', auth)
 manager.add_command('urls', ShowUrls())
 manager.run()
