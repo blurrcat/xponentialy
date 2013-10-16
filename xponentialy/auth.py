@@ -19,8 +19,9 @@ class XpAuth(Auth):
         except User.DoesNotExist:
             pass
         else:
-            session['company_pk'] = u.company.id
-            g.company = u.company
+            if u.company:
+                session['company_pk'] = u.company.id
+                g.company = u.company
 
     def get_current_company_id(self):
         if session.get('logged_in'):
