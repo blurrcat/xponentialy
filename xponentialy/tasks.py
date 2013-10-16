@@ -8,7 +8,7 @@ from fitbit import Fitbit
 from fitbit.exceptions import HTTPException
 
 from xponentialy.models import User, Update, db
-from xponentialy.models.fitbit import get_model_by_name
+from xponentialy.models import get_model_by_name
 
 
 class Task(object):

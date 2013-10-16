@@ -7,7 +7,7 @@ from peewee import *
 
 from xponentialy import db
 
-__all__ = ['House', 'User', 'Company', 'Survey', 'Activity',
+__all__ = ['Company', 'House', 'User', 'Survey', 'Activity',
            'IntradayActivity', 'Sleep', 'Update', 'Badge', 'UserBadge',
            'ForumThread', 'Challenge', 'ChallengeParticipant', 'InvalidPeriod',
            'Notification', 'Postsubscription', 'Emailmessage', 'Threadpost']

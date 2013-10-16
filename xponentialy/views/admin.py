@@ -9,8 +9,9 @@
 """
 from flask.ext.peewee.admin import Admin, ModelAdmin
 
-from xponentialy import app, auth
+from xponentialy import app
 from xponentialy import models
+from xponentialy.auth import auth
 
 
 admin = Admin(app, auth, branding='Xponentialy Admin')
