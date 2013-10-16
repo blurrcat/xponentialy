@@ -13,9 +13,23 @@ __all__ = ['House', 'User', 'Company', 'Survey', 'Activity',
            'Notification', 'Postsubscription', 'Emailmessage', 'Threadpost']
 
 
+class Company(db.Model):
+    description = CharField(null=True)
+    name = CharField(unique=True)
+    profile_pic = CharField(null=True)
+
+    class Meta:
+        db_table = 'company'
+
+    def __unicode__(self):
+        return self.name
+
+
 class House(db.Model):
     name = CharField()
     picture = CharField(null=True)
+    company = ForeignKeyField(rel_model=Company, related_name='houses',
+                              db_column='company_id')
 
     class Meta:
         db_table = 'house'
@@ -29,7 +43,8 @@ class User(db.Model, BaseUser):
     admin = IntegerField(null=True)
     badge_email_unsub = IntegerField(null=True)
     challenge_email_unsub = IntegerField(null=True)
-    company = IntegerField(null=True, db_column='company_id')
+    company = ForeignKeyField(null=True, db_column='company_id',
+                              rel_model=Company, related_name='users')
     confirmed_at = DateTimeField(null=True)
     current_login_at = DateTimeField(null=True)
     current_login_ip = CharField(null=True)
@@ -52,29 +67,18 @@ class User(db.Model, BaseUser):
     password = CharField()
     phantom = IntegerField(null=True)
     points = IntegerField(null=True)
-    profile_pic = CharField(null=True)
+    avatar = CharField(null=True)
     staff = IntegerField(null=True)
     username = CharField(null=True, unique=True)
 
     challenge_num = property(lambda self: self.challenges.count())
+    rank = property(lambda self: 1)  # Todo: implement rank
 
     class Meta:
         db_table = 'user'
 
     def __unicode__(self):
         return self.username
-
-
-class Company(db.Model):
-    description = CharField(null=True)
-    name = CharField(unique=True)
-    profile_pic = CharField(null=True)
-
-    class Meta:
-        db_table = 'company'
-
-    def __unicode__(self):
-        return self.name
 
 
 class Survey(db.Model):
@@ -123,9 +127,14 @@ class Activity(db.Model):
 
     class Meta:
         db_table = 'activity'
+        indexes = (
+            (('user', 'date'), True),
+        )
+
+
 
     def __unicode__(self):
-        return u'Activity of %s on %s' % (self.user_id, self.date)
+        return u'Activity of %s on %s' % (self.user, self.date)
 
 
 class IntradayActivity(db.Model):
@@ -192,7 +201,7 @@ def get_model_by_name(name):
 
 # competition
 class Badge(db.Model):
-    badge_pic = CharField()
+    avatar = CharField()
     description = CharField(null=True)
     min_points = IntegerField()
     name = CharField()
