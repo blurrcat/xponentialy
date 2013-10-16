@@ -14,9 +14,13 @@ class XpAuth(Auth):
 
     def login_user(self, user):
         super(XpAuth, self).login_user(user)
-        u = User.select(User.company).where(User.id == user.id).get()
-        session['company_pk'] = u.company.id
-        g.company = u.company
+        try:
+            u = User.select(User.company).where(User.id == user.id).get()
+        except User.DoesNotExist:
+            pass
+        else:
+            session['company_pk'] = u.company.id
+            g.company = u.company
 
     def get_current_company_id(self):
         if session.get('logged_in'):

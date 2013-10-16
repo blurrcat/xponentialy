@@ -101,7 +101,8 @@ class IntradayActivityResource(StrictOwnerResource):
 class HouseResource(RestResource):
 
     def get_query(self):
-        return self.model.select().where(self.model.company == g.company)
+        return self.model.select().where(
+            self.model.company == auth.get_current_company_id())
 
     def prepare_data(self, obj, data):
         data['rank'] = 1  # todo: implement house rank
