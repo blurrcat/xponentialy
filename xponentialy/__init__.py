@@ -33,4 +33,9 @@ db.connect_db()
 
 def load_app():
     import views
+    app.register_blueprint(views.xp_bp)
+    app.register_blueprint(views.fitbit_bp, url_prefix='/fitbit')
+    from tasks import init_app
+    init_app(app)
+
     return app

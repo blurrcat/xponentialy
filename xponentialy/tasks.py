@@ -55,7 +55,7 @@ class Task(object):
             def on_value(greenlet):
                 if self.logger:
                     self.logger.info('Finished task %s(%s, %s)',
-                                      f, *args, **kwargs)
+                                     f, *args, **kwargs)
                 self.result.set(greenlet.value)
 
             g_task = spawn(call, *args, **kwargs)
@@ -135,10 +135,15 @@ def get_update(collection, date, user_id):
             collection
         )
         return
-    user = User.query.with_entities(
-        User.oauth_token, User.oauth_secret).filter_by(id=user_id).first()
     update = Update(user_id=user_id, type=collection)
-    if user:
+    try:
+        user = User.select(
+            User.oauth_token, User.oauth_secret
+        ).where(User.id == user_id).get()
+    except User.DoesNotExist:
+        update.update = 'User %d not found' % user_id
+        update.time_updated = datetime.now()
+    else:
         client = Fitbit(
             current_app.config['FITBIT_KEY'],
             current_app.config['FITBIT_SECRET'],
@@ -158,16 +163,12 @@ def get_update(collection, date, user_id):
             update.update = 'Fail to get update: %s' % e
             update.time_updated = datetime.now()
         else:
-            item = model(user_id=user_id, date=date)
+            try:
+                item = model.get(model.user_id == user_id, model.date == date)
+            except model.DoesNotExist:
+                item = model(user_id=user_id, date=date)
             item.update(data)
-            db.session.merge(item)
+            item.save()
             update.update = 'update success'
             update.time_updated = datetime.now()
-    else:
-        update.update = 'User %d not found' % user_id
-        update.time_updated = datetime.now()
-    # will never reach here if any unhandled exception happened,
-    # like request timeout. In that case, the 'update_time' field
-    # will be empty. We may setup a cronjob to check them later
-    db.session.merge(update)
-    db.session.commit()
+    update.save()
