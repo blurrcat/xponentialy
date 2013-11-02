@@ -76,5 +76,5 @@ def authorized(resp):
         subscribe(user.id, conf['FITBIT_SUBSCRIPTION_ID'],
                   collection=collection)
     flash(u'Successfully connected to fitbit')
-    return redirect(url_for('user_info'))
+    return redirect(url_for('xponentialy.user_info'))
 
