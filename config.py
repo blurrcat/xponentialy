@@ -49,4 +49,4 @@ LOG_FILE = '/tmp/xponentialy.log'
 LOG_MAX_BYTES = 10485760  # 10MB
 LOG_BACKUP_COUNT = 10
 LOG_LEVEL = logging.INFO
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_FORMAT = "%(asctime)s [%(levelname)s] [%(name)s] %(message)s"
