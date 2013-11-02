@@ -1,6 +1,7 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
 import datetime
+import time
 
 from flask.ext.peewee.auth import BaseUser
 from peewee import *
@@ -131,7 +132,25 @@ class Activity(db.Model):
             (('user', 'date'), True),
         )
 
-
+    def update(self, data):
+        summary = data['summary']
+        self.steps = summary.get('steps', 0)
+        self.floors = summary.get('floors', 0)
+        # todo: confirm calories field name
+        self.calories = summary.get('caloriesOut', 0)
+        self.active_score = summary.get('activeScore', 0)
+        # todo: confirm distance field
+        for item in summary['distances']:
+            if item['activity'] == 'total':
+                self.distance = item['distance']
+                break
+        self.elevation = summary.get('elevation')
+        self.min_sedentary = summary['sedentaryMinutes']
+        self.min_lightlyactive = summary['lightlyActiveMinutes']
+        self.min_fairlyactive = summary['fairlyActiveMinutes']
+        self.min_veryactive = summary['veryActiveMinutes']
+        self.activity_calories = summary.get('activityCalories', 0)
+        self.last_update = time.time()
 
     def __unicode__(self):
         return u'Activity of %s on %s' % (self.user, self.date)
@@ -169,6 +188,21 @@ class Sleep(db.Model):
 
     class Meta:
         db_table = 'sleep'
+
+    def update(self, data):
+        summary = data['summary']
+        self.total_time = summary['totalTimeInBed']
+        self.time_asleep = summary['totalMinutesAsleep']
+        # todo: what if we have multiple sleep records?
+        if summary['totalSleepRecords'] >= 1:
+            sleep = data['sleep'][0]
+            self.start_time = datetime.datetime.strptime(
+                sleep['startTime'], '%Y-%m-%dT%H:%M:%S.%f')
+            self.awaken_count = sleep['awakeningsCount']
+            self.min_awake = sleep['minutesAwake']
+            self.min_to_asleep = sleep['minutesToFallAsleep']
+            self.min_after_wake = sleep['minutesAfterWakeup']
+            self.efficiency = sleep['efficiency']
 
     def __unicode__(self):
         return u'Sleep of %s on %s' % (self.user, self.date)

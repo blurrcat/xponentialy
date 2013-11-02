@@ -7,6 +7,7 @@
 """
 Default config for xponentialy
 """
+import logging
 
 DEBUG = True
 
@@ -43,14 +44,9 @@ MAIL_SERVER = 'localhost'
 # API
 API_VERSION = 1
 
-# Security
-SECURITY_REGISTERABLE = True
-SECURITY_CONFIRMABLE = True
-SECURITY_RECOVERABLE = True
-SECURITY_TRACKABLE = True
-SECURITY_CHANGEABLE = True
-SECURITY_EMAIL_SENDER = 'no-reply@demo.xponential.ly'
-SECURITY_URL_PREFIX = '/auth'
-SECURITY_POST_CONFIRM_VIEW = '/fitbit/confirmed'
-SECURITY_PASSWORD_HASH = 'bcrypt'
-SECURITY_PASSWORD_SALT = '___stupid_dev_salt__'
+# Logging
+LOG_FILE = '/tmp/xponentialy.log'
+LOG_MAX_BYTES = 10485760  # 10MB
+LOG_BACKUP_COUNT = 10
+LOG_LEVEL = logging.INFO
+LOG_FORMAT = "%(asctime)s [%(levelname)s] [%(name)s] %(message)s"
