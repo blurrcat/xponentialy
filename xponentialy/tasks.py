@@ -85,9 +85,12 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
     :return: None
     """
     logger = current_app.logger
-    user = User.query.with_entities(
-        User.oauth_token, User.oauth_secret).filter_by(id=user_id).first()
-    if user:
+    try:
+        user = User.select(User.oauth_token, User.oauth_secret).where(
+            User.id == user_id).get()
+    except User.DoesNotExist:
+        logger.error('User %d not found', user_id)
+    else:
         client = Fitbit(
             current_app.config['FITBIT_KEY'],
             current_app.config['FITBIT_SECRET'],
@@ -115,8 +118,6 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
             # }
             logger.info('Subscription success: %s', resp)
             return resp
-    else:
-        logger.error('User %d not found', user_id)
 
 
 @Task()
