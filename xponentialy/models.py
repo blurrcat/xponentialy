@@ -7,6 +7,7 @@ from flask.ext.peewee.auth import BaseUser
 from peewee import *
 
 from xponentialy import db
+from xponentialy.utils import time_range
 
 __all__ = ['Company', 'House', 'User', 'Survey', 'Activity',
            'IntradayActivity', 'Sleep', 'Update', 'Badge', 'UserBadge',
@@ -77,6 +78,18 @@ class User(db.Model, BaseUser):
 
     class Meta:
         db_table = 'user'
+
+    @classmethod
+    def get_leaders(cls, cid, days):
+        start, end = time_range(days)
+        challenge_completed = fn.Count(ChallengeParticipant.id)
+        return User.select(
+            User, challenge_completed.alias('challenge_completed')) \
+            .join(ChallengeParticipant).group_by(User.id) \
+            .where(ChallengeParticipant.complete_time >= start) \
+            .where(ChallengeParticipant.complete_time < end) \
+            .where(User.company == cid) \
+            .order_by(challenge_completed.desc())
 
     def __unicode__(self):
         return self.username
@@ -312,6 +325,10 @@ class ChallengeParticipant(db.Model):
 
     class Meta:
         db_table = 'challengeparticipant'
+
+        indexes = (
+            (('user_id', 'challenge_id'), True)
+        )
 
     def __unicode__(self):
         return u'%s in challenge %s' % (self.user, self.challenge)

@@ -5,7 +5,7 @@
 # Copyright © 2013 Harry <blurrcat@gmail.com>
 import datetime
 
-from flask import g, Response, jsonify
+from flask import g, jsonify, request, abort
 from flask.ext.peewee.rest import RestResource
 from flask.ext.peewee.rest import RestrictOwnerResource
 from flask.ext.peewee.rest import Authentication
@@ -40,7 +40,7 @@ class XpRestAPI(RestAPI):
 
     def response_auth_failed(self):
         # do not pop up user/password dialog
-        return Response('Authentication failed', 401)
+        abort(401)
 
 
 class SessionAuthentication(Authentication):
@@ -54,15 +54,44 @@ class UserResource(RestResource):
     fields = ['id', 'username', 'avatar', 'gender', 'points', 'company']
     include_resources = []
 
+    def is_leaderboard(self):
+        return 'leaders' in request.args
+
+    def get_leaderboard_time_range(self):
+        try:
+            days = int(request.args.get('time_range', 7))
+        except ValueError:
+            abort(400)
+        else:
+            if days < 0:
+                abort(400)
+            return days
+
     def get_query(self):
         User = self.model
-        return User.select().where(
-            User.company == auth.get_current_company_id())
+        if self.is_leaderboard():
+            days = self.get_leaderboard_time_range()
+            cid = auth.get_current_company_id()
+            return User.get_leaders(cid, days)
+        else:
+            return User.select().where(
+                User.company == auth.get_current_company_id())
 
     def prepare_data(self, obj, data):
         data['challenge_num'] = obj.challenge_num
         data['rank'] = obj.rank
+        if self.is_leaderboard():
+            data['challenge_completed'] = obj.challenge_completed
         return data
+
+    def get_request_metadata(self, paginated_query):
+        meta = super(UserResource, self).get_request_metadata(paginated_query)
+        if self.is_leaderboard():
+            meta.update({
+                'leaders': True,
+                'time_range': self.get_leaderboard_time_range()
+            })
+        return meta
 
 
 class BadgeResource(RestResource):
