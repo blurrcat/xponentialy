@@ -30,6 +30,13 @@ class XpAuth(Auth):
             except KeyError:
                 abort(404)
 
+    def get_current_user_id(self):
+        if session.get('logged_in'):
+            try:
+                return session.get('user_pk')
+            except KeyError:
+                abort(404)
+
     def test_user_or_401(self, test_fn):
         """
         Test if the user is currently logged in. If not, return 401
