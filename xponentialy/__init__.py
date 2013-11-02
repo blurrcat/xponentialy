@@ -36,6 +36,7 @@ db.connect_db()
 
 def load_app():
     conf = app.config
+    # logging
     handler = RotatingFileHandler(
         conf['LOG_FILE'], maxBytes=conf['LOG_MAX_BYTES'],
         backupCount=conf['LOG_BACKUP_COUNT'])
@@ -47,10 +48,15 @@ def load_app():
     formatter = logging.Formatter(conf['LOG_FORMAT'])
     handler.setFormatter(formatter)
     app.logger.addHandler(handler)
+
+    # views
     import views
     app.register_blueprint(views.xp_bp)
     app.register_blueprint(views.fitbit_bp, url_prefix='/fitbit')
+
+    # tasks
     from tasks import init_app
     init_app(app)
+    from tasks import fbit
 
     return app

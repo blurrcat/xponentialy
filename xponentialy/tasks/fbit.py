@@ -1,76 +1,13 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from gevent import spawn, sleep
-from gevent.event import AsyncResult
 from flask import current_app
 from fitbit import Fitbit
 from fitbit.exceptions import HTTPException
 
-from xponentialy.models import User, Update, db
+from . import Task
+from xponentialy.models import User, Update
 from xponentialy.models import get_model_by_name
-
-
-class Task(object):
-    RETRY_INTERVAL = 1
-    RETRY_MAX = 0
-    app = None
-
-    def __init__(self, max_retry=None, retry_interval=None, logger=None):
-        self.max_retry = max_retry or Task.RETRY_MAX
-        self.retry_interval = retry_interval or Task.RETRY_INTERVAL
-        self.logger = logger
-        self.result = AsyncResult()
-        self.tried = 0
-
-    def __call__(self, f):
-
-        def call(*args, **kwargs):
-            if self.logger:
-                self.logger.info('Start task %s(%s, %s)', f, *args, **kwargs)
-            with Task.app.app_context():
-                return f(*args, **kwargs)
-
-        def inner(*args, **kwargs):
-            def on_exception(greenlet):
-                if self.tried < self.max_retry:
-                    if self.logger:
-                        self.logger.error(
-                            'Unhandled exception in task: %s(%s, %s): %s; ' +
-                            'tried %d times; retry in %d sec', f, args, kwargs,
-                            greenlet.exception, self.tried, self.retry_interval
-                        )
-                    self.tried += 1
-                    sleep(self.retry_interval)
-                    inner(*args, **kwargs)
-                else:
-                    if self.logger:
-                        self.logger.error(
-                            'Unhandled exception in task: %s(%s, %s): %s; ' +
-                            'tried %d times; abort', f, args, kwargs,
-                            greenlet.exception, self.tried
-                        )
-                    self.result.set_exception(greenlet.exception)
-
-            def on_value(greenlet):
-                if self.logger:
-                    self.logger.info('Finished task %s(%s, %s)',
-                                     f, *args, **kwargs)
-                self.result.set(greenlet.value)
-
-            g_task = spawn(call, *args, **kwargs)
-            g_task.link_exception(on_exception)
-            g_task.link_value(on_value)
-
-            return self.result
-        return inner
-
-
-def init_app(app):
-    conf = app.config
-    Task.RETRY_INTERVAL = conf['TASK_RETRY_INTERVAL']
-    Task.RETRY_MAX = conf['TASK_RETRY_MAX']
-    Task.app = app
 
 
 @Task()
