@@ -7,6 +7,7 @@
 """
 Default config for xponentialy
 """
+import logging
 
 DEBUG = True
 
@@ -42,3 +43,10 @@ MAIL_SERVER = 'localhost'
 
 # API
 API_VERSION = 1
+
+# Logging
+LOG_FILE = '/tmp/xponentialy.log'
+LOG_MAX_BYTES = 10485760  # 10MB
+LOG_BACKUP_COUNT = 10
+LOG_LEVEL = logging.INFO
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

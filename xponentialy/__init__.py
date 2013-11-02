@@ -11,6 +11,9 @@ __version__ = '0.2.0a1'
 from gevent import monkey
 monkey.patch_all()
 
+import logging
+from logging.handlers import RotatingFileHandler
+
 from flask import Flask
 from flask.ext.peewee.db import Database
 
@@ -32,6 +35,18 @@ db.connect_db()
 
 
 def load_app():
+    conf = app.config
+    handler = RotatingFileHandler(
+        conf['LOG_FILE'], maxBytes=conf['LOG_MAX_BYTES'],
+        backupCount=conf['LOG_BACKUP_COUNT'])
+    if conf['DEBUG']:
+        level = logging.DEBUG
+    else:
+        level = conf['LOG_LEVEL']
+    handler.setLevel(level)
+    formatter = logging.Formatter(conf['LOG_FORMAT'])
+    handler.setFormatter(formatter)
+    app.logger.addHandler(handler)
     import views
     app.register_blueprint(views.xp_bp)
     app.register_blueprint(views.fitbit_bp, url_prefix='/fitbit')
