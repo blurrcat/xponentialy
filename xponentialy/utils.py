@@ -41,3 +41,13 @@ def time_range(n_days):
     now = dt.utcnow()
     delta = timedelta(seconds=n_days * 86400)
     return now - delta, now
+
+
+def evl(q, *fields):
+    """
+    Evaluate and print the result of a peewee query
+    :param q: a peewee query
+    :param fields: fields to print
+    """
+    for r in q:
+        print r.id, {f:getattr(r, f) for f in fields}

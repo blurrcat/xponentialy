@@ -44,9 +44,8 @@ class House(db.Model):
             House, points.alias('points')) \
             .join(ChallengeParticipant) \
             .join(Challenge).group_by(User.id) \
-            .where(ChallengeParticipant.complete_time >= start) \
-            .where(ChallengeParticipant.complete_time < end) \
-            .where(User.company == cid) \
+            .where(ChallengeParticipant.complete_time.between(start, end)) \
+            .where(House.company == cid) \
             .order_by(points.desc())
 
     def __unicode__(self):
@@ -99,9 +98,8 @@ class User(db.Model, BaseUser):
         return User.select(
             User, challenge_completed.alias('challenge_completed')) \
             .join(ChallengeParticipant).group_by(User.id) \
-            .where(ChallengeParticipant.complete_time >= start) \
-            .where(ChallengeParticipant.complete_time < end) \
-            .where(User.company == cid) \
+            .where(ChallengeParticipant.complete_time.between(start, end)) \
+            .where(User.company == cid).where(User.active) \
             .order_by(challenge_completed.desc())
 
     def __unicode__(self):
