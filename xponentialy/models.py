@@ -7,6 +7,7 @@ from flask.ext.peewee.auth import BaseUser
 from peewee import *
 
 from xponentialy import db
+from xponentialy.utils import time_range
 
 __all__ = ['Company', 'House', 'User', 'Survey', 'Activity',
            'IntradayActivity', 'Sleep', 'Update', 'Badge', 'UserBadge',
@@ -34,6 +35,18 @@ class House(db.Model):
 
     class Meta:
         db_table = 'house'
+
+    @classmethod
+    def get_leaders(cls, cid, days):
+        start, end = time_range(days)
+        points = fn.Sum(Challenge.points)
+        return House.select(
+            House, points.alias('points')) \
+            .join(ChallengeParticipant) \
+            .join(Challenge).group_by(User.id) \
+            .where(ChallengeParticipant.complete_time.between(start, end)) \
+            .where(House.company == cid) \
+            .order_by(points.desc())
 
     def __unicode__(self):
         return self.name
@@ -77,6 +90,17 @@ class User(db.Model, BaseUser):
 
     class Meta:
         db_table = 'user'
+
+    @classmethod
+    def get_leaders(cls, cid, days):
+        start, end = time_range(days)
+        challenge_completed = fn.Count(ChallengeParticipant.id)
+        return User.select(
+            User, challenge_completed.alias('challenge_completed')) \
+            .join(ChallengeParticipant).group_by(User.id) \
+            .where(ChallengeParticipant.complete_time.between(start, end)) \
+            .where(User.company == cid).where(User.active) \
+            .order_by(challenge_completed.desc())
 
     def __unicode__(self):
         return self.username
@@ -302,16 +326,22 @@ class ChallengeParticipant(db.Model):
     challenge = ForeignKeyField(db_column='challenge_id', rel_model=Challenge,
                                 related_name='participants')
     complete_time = DateTimeField(null=True)
-    end_time = DateTimeField()
+    end_time = DateTimeField(null=True)
     id = BigIntegerField()
     inactive = IntegerField(null=True)
     progress = FloatField(null=True, default=0)
     start_time = DateTimeField(null=True, default=datetime.datetime.utcnow)
     user = ForeignKeyField(db_column='user_id', rel_model=User,
                            related_name='challenges')
+    house = ForeignKeyField(db_column='house_id', rel_model=House,
+                            relate_name='challenges')
 
     class Meta:
         db_table = 'challengeparticipant'
+
+        indexes = (
+            (('user', 'challenge'), True),
+        )
 
     def __unicode__(self):
         return u'%s in challenge %s' % (self.user, self.challenge)

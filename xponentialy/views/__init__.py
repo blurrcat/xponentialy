@@ -5,7 +5,6 @@ from flask import render_template
 
 import admin
 import api
-import leaderborad
 from .fitbit import fitbit_bp
 from xponentialy.auth import auth
 

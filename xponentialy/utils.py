@@ -1,5 +1,7 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
+from datetime import datetime as dt
+from datetime import timedelta
 
 
 def intraday_time_series(fitbit_client, resource, base_date='today',
@@ -29,3 +31,23 @@ def intraday_time_series(fitbit_client, resource, base_date='today',
     url = '/'.join(parts) + '.json'
 
     return fitbit_client.make_request(url)
+
+
+def time_range(n_days):
+    """
+    :param n_days:
+    :return:
+    """
+    now = dt.utcnow()
+    delta = timedelta(seconds=n_days * 86400)
+    return now - delta, now
+
+
+def evl(q, *fields):
+    """
+    Evaluate and print the result of a peewee query
+    :param q: a peewee query
+    :param fields: fields to print
+    """
+    for r in q:
+        print r.id, {f:getattr(r, f) for f in fields}

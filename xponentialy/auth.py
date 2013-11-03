@@ -2,12 +2,12 @@
 # # -*- coding: utf-8 -*-
 import functools
 
-from flask import g, Response
+from flask import g, Response, abort
 from flask import session
 from flask.ext.peewee.auth import Auth
 
 from xponentialy import app, db
-from xponentialy.models import User, Company
+from xponentialy.models import User
 
 
 class XpAuth(Auth):
@@ -25,7 +25,17 @@ class XpAuth(Auth):
 
     def get_current_company_id(self):
         if session.get('logged_in'):
-            return session.get('company_pk')
+            try:
+                return session.get('company_pk')
+            except KeyError:
+                abort(404)
+
+    def get_current_user_id(self):
+        if session.get('logged_in'):
+            try:
+                return session.get('user_pk')
+            except KeyError:
+                abort(404)
 
     def test_user_or_401(self, test_fn):
         """
