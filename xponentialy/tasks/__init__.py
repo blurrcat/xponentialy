@@ -4,6 +4,10 @@ from gevent import spawn, sleep
 from gevent.event import AsyncResult
 
 
+class StopTask(Exception):
+    pass
+
+
 class Task(object):
     RETRY_INTERVAL = 1
     RETRY_MAX = 0
@@ -24,6 +28,10 @@ class Task(object):
             result = AsyncResult()
 
             def on_exception(greenlet):
+                if isinstance(greenlet.exception, StopTask):
+                    self.app.logger.info(
+                        'Task stopped because %s', greenlet.exception.message
+                    )
                 tried = greenlet.tried
                 with self.app.app_context():
                     if greenlet.tried < self.max_retry:

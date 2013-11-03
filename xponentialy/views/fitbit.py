@@ -9,8 +9,9 @@ from flask_oauthlib.client import OAuth
 
 from xponentialy.auth import auth
 from xponentialy.models import User
-from xponentialy.tasks.fbit import subscribe
+from xponentialy.tasks.fbit import subscribe, sync_history
 from xponentialy.tasks.fbit import get_update
+from xponentialy.utils import recent_days
 
 fitbit_bp = Blueprint('fitbit', __name__)
 oauth = OAuth()
@@ -73,6 +74,8 @@ def authorized(resp):
     user.save()
     conf = current_app.config
     for collection in conf['FITBIT_SUBSCRIPTION_COLLECTIONS']:
+        sync_history(
+            user.id, recent_days(conf['FITBIT_SYNC_DAYS']), collection)
         subscribe(user.id, conf['FITBIT_SUBSCRIPTION_ID'],
                   collection=collection)
     flash(u'Successfully connected to fitbit')

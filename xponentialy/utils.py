@@ -50,4 +50,13 @@ def evl(q, *fields):
     :param fields: fields to print
     """
     for r in q:
-        print r.id, {f:getattr(r, f) for f in fields}
+        print r.id, {f: getattr(r, f) for f in fields}
+
+
+def recent_days(n=30):
+    delta = timedelta(seconds=86400)
+    today = dt.utcnow()
+    yield today.strftime('%Y-%m-%d')
+    for i in xrange(n - 1):
+        today = today - delta
+        yield today.strftime('%Y-%m-%d')

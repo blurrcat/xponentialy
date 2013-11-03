@@ -31,8 +31,10 @@ FITBIT_OAUTH = {
     'access_token_url': 'http://api.fitbit.com/oauth/access_token',
     'authorize_url': 'http://www.fitbit.com/oauth/authorize',
 }
-FITBIT_SUBSCRIPTION_COLLECTIONS = ['activities']
+FITBIT_SUBSCRIPTION_COLLECTIONS = ['sleep', 'activities']
 FITBIT_SUBSCRIPTION_ID = 'ec2-dev'
+# how long to sync data when the user first connects to us
+FITBIT_SYNC_DAYS = 30
 
 # Tasks
 TASK_RETRY_INTERVAL = 30
