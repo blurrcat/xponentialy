@@ -9,8 +9,8 @@ from flask_oauthlib.client import OAuth
 
 from xponentialy.auth import auth
 from xponentialy.models import User
-from xponentialy.tasks import subscribe
-from xponentialy.tasks import get_update
+from xponentialy.tasks.fbit import subscribe
+from xponentialy.tasks.fbit import get_update
 
 fitbit_bp = Blueprint('fitbit', __name__)
 oauth = OAuth()
