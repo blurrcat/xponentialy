@@ -22,6 +22,6 @@ def index():
 @auth.login_required
 def user_info():
     if request.method == 'GET':
-        return 'user info form here'
+        return render_template('user_info.html')
     else:
         return redirect(url_for('.index'))
