@@ -127,7 +127,6 @@ def get_update(collection, date, user_id):
     update.save()
 
 
-@Task(max_retry=3, retry_interval=5)
 def get_resource(resource_access, model, date, user_id):
     current_app.logger.info('get resource for %s, %s, %d',
                             model, date, user_id)

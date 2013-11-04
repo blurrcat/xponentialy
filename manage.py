@@ -7,7 +7,7 @@ from flask.ext.script import Manager, prompt, prompt_pass, prompt_bool
 from flask.ext.script.commands import ShowUrls
 
 from xponentialy import load_app
-from xponentialy.tasks.fbit import sync_history
+from xponentialy.tasks.fbit import sync_history, get_fitbit_client
 from xponentialy.utils import recent_days
 
 manager = Manager(load_app)
@@ -72,6 +72,13 @@ def sync(user_id, days):
         for r in items:
             print r.get()
     print 'Done.'
+
+
+@accounts.option('-u', '--user-id', dest='user_id', type=int)
+@accounts.option('-c', '--collection')
+def list_subscriptions(user_id, collection):
+    client = get_fitbit_client(user_id)
+    print client.list_subscriptions(collection)
 
 
 manager.add_command('db', db)
