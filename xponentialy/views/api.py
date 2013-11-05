@@ -147,6 +147,10 @@ class ActivityResource(StrictOwnerResource):
     pass
 
 
+class SleepResource(StrictOwnerResource):
+    pass
+
+
 class IntradayActivityResource(StrictOwnerResource):
     pass
 
@@ -192,6 +196,7 @@ api.register(models.Challenge, ChallengeResource, allowed_methods=['GET'])
 api.register(models.ChallengeParticipant, ChallengeParticipantResource,
              allowed_methods=['GET', 'PUT', 'POST', 'DELETE'])
 api.register(models.Activity, ActivityResource, allowed_methods=['GET'])
+api.register(models.Sleep, SleepResource, allowed_methods=['GET'])
 api.register(models.IntradayActivity, IntradayActivityResource,
              allowed_methods=['GET'])
 api.register(models.House, HouseResource, allowed_methods=['GET'])

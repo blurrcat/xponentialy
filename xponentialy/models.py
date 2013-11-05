@@ -241,7 +241,7 @@ class Update(db.Model):
 
     class Meta:
         db_table = 'updates'
-        order_by = ('-time_dated',)
+        order_by = ('-time_updated',)
 
     def __unicode__(self):
         return u'type: %s; user: %s; time: %s' % (
