@@ -7,12 +7,13 @@ from flask.ext.script import Manager, prompt, prompt_pass, prompt_bool
 from flask.ext.script.commands import ShowUrls
 
 from xponentialy import load_app
-from xponentialy.tasks.fbit import sync_history, get_fitbit_client
+from xponentialy.tasks.fbit import sync_history, get_fitbit_client, subscribe
 from xponentialy.utils import recent_days
 
 manager = Manager(load_app)
 db = Manager(usage='Database housekeepings. See sub-commands.')
 accounts = Manager(usage='User management')
+fitbit = Manager(usage='Fitbit management')
 
 
 @db.command
@@ -53,9 +54,9 @@ def create_user():
     print 'User created.'
 
 
-@accounts.option('-u', '--user-id', dest='user_id', type=int)
-@accounts.option('-d', '--days', default=None, type=int,
-                 help='number of days to sync')
+@fitbit.option('-u', '--user-id', dest='user_id', type=int)
+@fitbit.option('-d', '--days', default=None, type=int,
+               help='number of days to sync')
 def sync(user_id, days):
     """
     Sync fitbit data for user
@@ -74,14 +75,22 @@ def sync(user_id, days):
     print 'Done.'
 
 
-@accounts.option('-u', '--user-id', dest='user_id', type=int)
-@accounts.option('-c', '--collection')
+@fitbit.option('-u', '--user-id', dest='user_id', type=int)
+@fitbit.option('-c', '--collection')
 def list_subscriptions(user_id, collection):
     client = get_fitbit_client(user_id)
     print client.list_subscriptions(collection)
 
 
+@fitbit.option('-u', '--user-id', dest='user_id', type=int)
+@fitbit.option('-c', '--collection')
+def sub(user_id, collection):
+    print subscribe(user_id, current_app.config['FITBIT_SUBSCRIPTION_ID'],
+                    collection=collection)
+
+
 manager.add_command('db', db)
 manager.add_command('accounts', accounts)
+manager.add_command('fitbit', fitbit)
 manager.add_command('urls', ShowUrls())
 manager.run()
