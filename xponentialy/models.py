@@ -155,6 +155,7 @@ class Activity(db.Model):
         indexes = (
             (('user', 'date'), True),
         )
+        order_by = ('-date', )
 
     def update_from_fitbit(self, data):
         summary = data['summary']
@@ -212,6 +213,7 @@ class Sleep(db.Model):
 
     class Meta:
         db_table = 'sleep'
+        order_by = ('-date',)
 
     def update_from_fitbit(self, data):
         summary = data['summary']
@@ -239,6 +241,7 @@ class Update(db.Model):
 
     class Meta:
         db_table = 'updates'
+        order_by = ('-time_dated',)
 
     def __unicode__(self):
         return u'type: %s; user: %s; time: %s' % (
