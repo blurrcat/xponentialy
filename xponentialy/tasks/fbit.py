@@ -103,7 +103,7 @@ def get_update(collection, date, user_id):
             collection
         )
         return
-    update = Update(user_id=user_id, type=collection)
+    update = Update(user=user_id, type=collection)
     try:
         client = get_fitbit_client(user_id, False)
     except User.DoesNotExist:
@@ -123,7 +123,7 @@ def get_update(collection, date, user_id):
         else:
             insert_or_create(model, user_id, date, data)
             update.update = 'Update success'
-    update.time_updated = datetime.now()
+    update.time_updated = datetime.utcnow()
     update.save()
 
 
