@@ -84,9 +84,13 @@ def list_subscriptions(user_id, collection):
 
 @fitbit.option('-u', '--user-id', dest='user_id', type=int)
 @fitbit.option('-c', '--collection')
-def sub(user_id, collection):
-    print subscribe(user_id, current_app.config['FITBIT_SUBSCRIPTION_ID'],
-                    collection=collection)
+@fitbit.option('-d', '--delete', action='store_true')
+def subscribe(user_id, collection, delete=False):
+    method = 'DELETE' if delete else 'POST'
+    client = get_fitbit_client(user_id)
+    print client.subscription(
+        user_id, current_app.config['FITBIT_SUBSCRIPTION_ID'],
+        collection, method=method)
 
 
 manager.add_command('db', db)
