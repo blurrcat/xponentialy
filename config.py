@@ -35,6 +35,9 @@ FITBIT_SUBSCRIPTION_COLLECTIONS = ['sleep', 'activities']
 FITBIT_SUBSCRIPTION_ID = 'ec2-dev'
 # how long to sync data when the user first connects to us
 FITBIT_SYNC_DAYS = 30
+FITBIT_INTRADAY_ENABLED = False
+FITBIT_INTRADAY_DETAIL_LEVEL = '1min'
+FITBIT_INTRADAY_RESOURCES = ('steps',)
 
 # Tasks
 TASK_RETRY_INTERVAL = 30

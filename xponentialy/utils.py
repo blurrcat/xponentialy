@@ -4,9 +4,9 @@ from datetime import datetime as dt
 from datetime import timedelta
 
 
-def intraday_time_series(fitbit_client, resource, base_date='today',
-                         detail_level='1min', start_time='00:00',
-                         end_time='23:59'):
+def get_intraday_url(fitbit_client, resource, base_date='today',
+                     detail_level='1min', start_time='00:00',
+                     end_time='23:59'):
     """
     python-fitbit API currently doesn't have intraday-activity, add one here
     :param fitbit_client: an instance of :class:`fitbit.Fitbit`
@@ -48,6 +48,15 @@ def make_datetime(date_str, time_str):
     return dt.strptime('%s %s' % (date_str, time_str), '%Y-%m-%d %H:%M')
 
 
+def split_datetime(dt):
+    """
+    Inverse of :function:`make_datetime`
+    :param dt:
+    :return:
+    """
+    return dt.strftime('%Y-%m-%d'), dt.strftime('%H:%M')
+
+
 def time_range(n_days):
     """
     :param n_days:
@@ -68,10 +77,12 @@ def evl(q, *fields):
         print r.id, {f: getattr(r, f) for f in fields}
 
 
-def recent_days(n=30):
+def recent_days(n=30, formator=None):
+    if not formator:
+        formator = lambda d: d.strftime('%Y-%m-%d')
     delta = timedelta(seconds=86400)
     today = dt.utcnow()
-    yield today.strftime('%Y-%m-%d')
+    yield formator(today)
     for i in xrange(n - 1):
         today = today - delta
-        yield today.strftime('%Y-%m-%d')
+        yield formator(today)

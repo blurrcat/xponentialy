@@ -6,11 +6,11 @@ from flask import current_app
 from fitbit import Fitbit
 from fitbit.exceptions import HTTPException, HTTPUnauthorized
 
-from . import Task, StopTask
+from . import Task
 from xponentialy import db
 from xponentialy.models import User, Update, IntradayActivity
 from xponentialy.models import get_model_by_name
-from xponentialy.utils import intraday_time_series, make_datetime, recent_days
+from xponentialy.utils import get_intraday_url, make_datetime, recent_days, split_datetime
 
 
 def _handle_unauthorised(user, exception):
@@ -128,19 +128,22 @@ def get_update(collection, date, user_id):
         else:
             insert_or_create(model, user_id, date, data)
             update.update = 'Update success'
-        conf = current_app.config
-        if collection == 'activities' and conf['FITBIT_INTRADAY_ENABLED']:
-            last_update = update.time_updated or now
-            # currently intraday API can't work for getting multiple days of
-            # data. For example,
-            # GET /1/user/-/activities/steps/date/2013-10-07/2013-10-08/15min/time/00:00/23:59.json
-            # returns a BadRequest. The following is a work around which
-            # pulls data for each data.
-            days = (now - last_update).days
-            for day in recent_days(days):
-                get_intraday(user, client, day,
-                             conf['FITBIT_INTRADAY_DETAIL_LEVEL'],
-                             conf['FITBIT_INTRADAY_RESOURCES'])
+            conf = current_app.config
+            if collection == 'activities' and conf['FITBIT_INTRADAY_ENABLED']:
+                last_update = Update.last_update_time(user, 'activities')
+                if not last_update:
+                    last_update = now
+                base_date, start_time = split_datetime(last_update)
+                get_intraday(
+                    user, client, base_date, start_time,
+                    detail_level=conf['FITBIT_INTRADAY_DETAIL_LEVEL'],
+                    resources=conf['FITBIT_INTRADAY_RESOURCES']
+                )
+                # TODO: get multiple days of intraday data
+                # currently intraday API can't work for getting multiple
+                # days of data. For example,
+                # GET /1/user/-/activities/steps/date/2013-10-07/2013-10-08/15min/time/00:00/23:59.json
+                # returns a BadRequest.
     update.time_updated = now
     update.save()
 
@@ -161,18 +164,22 @@ def get_resource(resource_access, model, date, user_id):
         return insert_or_create(model, user_id, date, data)
 
 
-def get_intraday(user, client, base_date, detail_level, resources):
+def get_intraday(user, client, base_date, start_time, detail_level, resources):
+    logger = current_app.logger
     for resource in resources:
+        url = get_intraday_url(client, resource,
+                               detail_level=detail_level,
+                               base_date=base_date,
+                               start_time=start_time)
         try:
-            resp = intraday_time_series(client, resource,
-                                        detail_level=detail_level,
-                                        start_time=base_date)
+            resp = client.make_request(url)
         except HTTPException as e:
             _handle_unauthorised(user, e)
-            current_app.logger.error("Can't get intraday %s for user %s",
-                                     resource, user.id)
+            logger.error("Can't get intraday %s for user %s",
+                         resource, user.id)
             return
         else:
+            logger.debug('GET %s: %s', url, resp)
             date_str = resp.get('activities-%s' % resource)[0]['dateTime']
             intraday = resp.get('activities-%s-intraday' % resource)['dataset']
             with db.database.transaction():

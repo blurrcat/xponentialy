@@ -251,6 +251,18 @@ class Update(db.Model):
     class Meta:
         db_table = 'updates'
         order_by = ('-time_updated',)
+        indexes = (
+            ('user', ), False,
+            ('time_updated',), False
+        )
+
+    @classmethod
+    def last_update_time(cls, user, collection):
+        try:
+            update = Update.get(Update.user == user, Update.type == collection)
+            return update.time_updated
+        except Update.DoesNotExist:
+            return None
 
     def __unicode__(self):
         return u'type: %s; user: %s; time: %s' % (
