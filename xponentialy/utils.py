@@ -33,9 +33,7 @@ def get_intraday_url(fitbit_client, resource, base_date='today',
              'user', '-', 'activities', resource, 'date', base_date, '1d',
              detail_level, 'time', start_time, end_time]
 
-    url = '/'.join(parts) + '.json'
-
-    return fitbit_client.make_request(url)
+    return '/'.join(parts) + '.json'
 
 
 def make_datetime(date_str, time_str):
