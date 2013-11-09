@@ -1,6 +1,6 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import current_app
 from fitbit import Fitbit
@@ -131,19 +131,14 @@ def get_update(collection, date, user_id):
             conf = current_app.config
             if collection == 'activities' and conf['FITBIT_INTRADAY_ENABLED']:
                 last_update = Update.last_update_time(user, 'activities')
+                # for the first time, sync last day's data
                 if not last_update:
-                    last_update = now
-                base_date, start_time = split_datetime(last_update)
+                    last_update = datetime.utcnow() - timedelta(days=1)
                 get_intraday(
-                    user, client, base_date, start_time,
+                    user, client, last_update,
                     detail_level=conf['FITBIT_INTRADAY_DETAIL_LEVEL'],
                     resources=conf['FITBIT_INTRADAY_RESOURCES']
                 )
-                # TODO: get multiple days of intraday data
-                # currently intraday API can't work for getting multiple
-                # days of data. For example,
-                # GET /1/user/-/activities/steps/date/2013-10-07/2013-10-08/15min/time/00:00/23:59.json
-                # returns a BadRequest.
     update.time_updated = now
     update.save()
 
@@ -164,34 +159,54 @@ def get_resource(resource_access, model, date, user_id):
         return insert_or_create(model, user_id, date, data)
 
 
-def get_intraday(user, client, base_date, start_time, detail_level, resources):
+def get_intraday(user, client, last_update, detail_level, resources):
+    """
+    Get intraday data from base_date:start_time to now.
+    """
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0,
+                                      microsecond=0)
+
+    def get_dates(last_update):
+        yield split_datetime(last_update)
+        delta = timedelta(days=1)
+        last_update = last_update.replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        last_update += delta
+        while (today - last_update).days >= 0:
+            yield split_datetime(last_update)
+            last_update += delta
+
     logger = current_app.logger
     for resource in resources:
-        url = get_intraday_url(client, resource,
-                               detail_level=detail_level,
-                               base_date=base_date,
-                               start_time=start_time)
-        try:
-            resp = client.make_request(url)
-        except HTTPException as e:
-            _handle_unauthorised(user, e)
-            logger.error("Can't get intraday %s for user %s",
-                         resource, user.id)
-            return
-        else:
-            logger.debug('GET %s: %s', url, resp)
-            date_str = resp.get('activities-%s' % resource)[0]['dateTime']
-            intraday = resp.get('activities-%s-intraday' % resource)['dataset']
-            with db.database.transaction():
-                for entry in intraday:
-                    # only store non-zero value
-                    if entry['value']:
-                        intraday_activity = IntradayActivity(
-                            activity_time=make_datetime(
-                                date_str, entry['time']),
-                        )
-                        setattr(intraday, resource, entry['value'])
-                        intraday_activity.save()
+        for base_date, start_time in get_dates(last_update):
+            url = get_intraday_url(client, resource,
+                                   detail_level=detail_level,
+                                   base_date=base_date,
+                                   start_time=start_time)
+            try:
+                resp = client.make_request(url)
+            except HTTPException as e:
+                _handle_unauthorised(user, e)
+                logger.error("Can't get intraday %s for user %s",
+                             resource, user.id)
+                return
+            else:
+                logger.debug('GET %s: %s', url, resp)
+                date_str = resp.get('activities-%s' % resource)[0]['dateTime']
+                intraday = resp.get(
+                    'activities-%s-intraday' % resource)['dataset']
+                with db.database.transaction():
+                    for entry in intraday:
+                        # only store non-zero value
+                        if entry['value']:
+                            intraday_activity = IntradayActivity(
+                                user=user,
+                                activity_time=make_datetime(
+                                    date_str, entry['time']),
+                            )
+                            intraday_activity.update_from_fitbit(
+                                entry, resource)
+                            intraday_activity.save()
 
 
 @Task(max_retry=0)

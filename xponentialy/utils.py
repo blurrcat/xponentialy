@@ -40,17 +40,18 @@ def make_datetime(date_str, time_str):
     """
     Make a datetime object from string
     :param date_str: '%Y-%m-%d', e.g., 2013-11-10
-    :param time_str: '%H:%M', e.g. 23:20
+    :param time_str: '%H:%M:%S', e.g. 23:20:02
     :return:
     """
-    return dt.strptime('%s %s' % (date_str, time_str), '%Y-%m-%d %H:%M')
+    return dt.strptime('%s %s' % (date_str, time_str), '%Y-%m-%d %H:%M%S')
 
 
 def split_datetime(dt):
     """
-    Inverse of :function:`make_datetime`
-    :param dt:
-    :return:
+    Given a datetime object, return a tuple consisting a date str and a
+    time str.
+    :param dt: a datetime object
+    :return: ('%Y-%m-%d', '%H:%M')
     """
     return dt.strftime('%Y-%m-%d'), dt.strftime('%H:%M')
 

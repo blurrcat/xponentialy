@@ -203,6 +203,14 @@ class IntradayActivity(db.Model):
     class Meta:
         db_table = 'intradayactivity'
 
+    def update_from_fitbit(self, data, resource):
+        if resource == 'calories':
+            self.calories = data['value']
+            self.calories_level = data['level']
+        else:
+            setattr(self, resource, data['value'])
+
+
     def __unicode__(self):
         return 'IntradayActivity of %s at %s' % (self.user, self.activity_time)
 
