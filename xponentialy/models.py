@@ -202,6 +202,10 @@ class IntradayActivity(db.Model):
 
     class Meta:
         db_table = 'intradayactivity'
+        order_by = ('-activity_time',)
+        indexes = (
+            (('user', 'activity_time'), True),
+        )
 
     def update_from_fitbit(self, data, resource):
         if resource == 'calories':
@@ -260,8 +264,8 @@ class Update(db.Model):
         db_table = 'updates'
         order_by = ('-time_updated',)
         indexes = (
-            ('user', ), False,
-            ('time_updated',), False
+            (('user', ), False),
+            (('time_updated',), False),
         )
 
     @classmethod

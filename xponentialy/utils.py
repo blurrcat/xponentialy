@@ -18,9 +18,10 @@ def get_intraday_url(fitbit_client, resource, base_date='today',
     object
     :return:
     """
-    if resource not in ('calories', 'steps', 'floors', 'elevation'):
+    if resource not in (
+            'calories', 'steps', 'floors', 'elevation', 'distance'):
         raise ValueError("resource must be one of 'calories', 'steps'," +
-                         " 'floors', 'elevation'")
+                         " 'floors', 'elevation', 'distance'")
     if not isinstance(base_date, basestring):
         base_date = base_date.strftime('%Y-%m-%d')
     if detail_level and detail_level not in ('1min', '15min'):
@@ -43,7 +44,7 @@ def make_datetime(date_str, time_str):
     :param time_str: '%H:%M:%S', e.g. 23:20:02
     :return:
     """
-    return dt.strptime('%s %s' % (date_str, time_str), '%Y-%m-%d %H:%M%S')
+    return dt.strptime('%s %s' % (date_str, time_str), '%Y-%m-%d %H:%M:%S')
 
 
 def split_datetime(dt):

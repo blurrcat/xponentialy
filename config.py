@@ -37,7 +37,7 @@ FITBIT_SUBSCRIPTION_ID = 'ec2-dev'
 FITBIT_SYNC_DAYS = 30
 FITBIT_INTRADAY_ENABLED = False
 FITBIT_INTRADAY_DETAIL_LEVEL = '1min'
-FITBIT_INTRADAY_RESOURCES = ('steps', 'sleep', 'calories', 'floors',
+FITBIT_INTRADAY_RESOURCES = ('steps', 'distance', 'calories', 'floors',
                              'elevation')
 
 # Tasks

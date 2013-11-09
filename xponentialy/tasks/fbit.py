@@ -199,11 +199,18 @@ def get_intraday(user, client, last_update, detail_level, resources):
                     for entry in intraday:
                         # only store non-zero value
                         if entry['value']:
-                            intraday_activity = IntradayActivity(
-                                user=user,
-                                activity_time=make_datetime(
-                                    date_str, entry['time']),
-                            )
+                            try:
+                                intraday_activity = IntradayActivity.get(
+                                    IntradayActivity.user == user,
+                                    IntradayActivity.activity_time ==
+                                    make_datetime(date_str, entry['time']),
+                                )
+                            except IntradayActivity.DoesNotExist:
+                                intraday_activity = IntradayActivity(
+                                    user=user,
+                                    activity_time=make_datetime(
+                                        date_str, entry['time'])
+                                )
                             intraday_activity.update_from_fitbit(
                                 entry, resource)
                             intraday_activity.save()
