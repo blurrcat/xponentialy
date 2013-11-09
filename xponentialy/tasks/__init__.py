@@ -14,7 +14,10 @@ class Task(object):
     app = None
 
     def __init__(self, max_retry=None, retry_interval=None):
-        self.max_retry = max_retry or Task.RETRY_MAX
+        if max_retry is None:
+            self.max_retry = Task.RETRY_MAX
+        else:
+            self.max_retry = max_retry
         self.retry_interval = retry_interval or Task.RETRY_INTERVAL
 
     def __call__(self, f):
