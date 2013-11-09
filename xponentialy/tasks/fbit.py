@@ -4,11 +4,22 @@ from datetime import datetime
 
 from flask import current_app
 from fitbit import Fitbit
-from fitbit.exceptions import HTTPException
+from fitbit.exceptions import HTTPException, HTTPUnauthorized
 
 from . import Task, StopTask
-from xponentialy.models import User, Update
+from xponentialy import db
+from xponentialy.models import User, Update, IntradayActivity
 from xponentialy.models import get_model_by_name
+from xponentialy.utils import intraday_time_series, make_datetime
+
+
+def _handle_unauthorised(user, exception):
+    if isinstance(exception, HTTPUnauthorized):
+        # invalid token-secret pair, reset to empty
+        # TODO: ask user to reconnect the next time he logs in
+        user.oauth_token = ''
+        user.oauth_secret = ''
+        user.save()
 
 
 @Task()
@@ -43,6 +54,7 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
             resp = client.subscription(
                 user_id, subscriber_id, collection, method=method)
         except HTTPException as e:
+            _handle_unauthorised(user, e)
             logger.error(
                 'Subscription error: %s; user_id: %s, '
                 'subscriber_id: %s, collection: %s', repr(e), user_id,
@@ -59,6 +71,15 @@ def subscribe(user_id, subscriber_id, delete=False, collection=None):
 
 
 def insert_or_create(model, user_id, date, data):
+    """
+    Insert or create an entry of Activity or sleep
+    :param model: :class:`xponentialy.models.Sleep` or
+        :class:`xponentialy.models.Activity`
+    :param user_id: owner id
+    :param date: date of the entry
+    :param data: resource data returned by fitbit
+    :return: the new or updated instance
+    """
     try:
         item = model.get(model.user == user_id, model.date == date)
     except model.DoesNotExist:
@@ -68,28 +89,10 @@ def insert_or_create(model, user_id, date, data):
     return item
 
 
-def get_fitbit_client(user_id, stop_task=True):
-    try:
-        user = User.select(
-            User.oauth_token, User.oauth_secret
-        ).where(User.id == user_id).get()
-    except User.DoesNotExist:
-        if stop_task:
-            raise StopTask('Invalid user_id: %s', user_id)
-        else:
-            raise
-    else:
-        return Fitbit(
-            current_app.config['FITBIT_KEY'],
-            current_app.config['FITBIT_SECRET'],
-            user_key=user.oauth_token,
-            user_secret=user.oauth_secret
-        )
-
-
 @Task()
 def get_update(collection, date, user_id):
     logger = current_app.logger
+    now = datetime.utcnow()  # TODO: should be user's local time
     try:
         user_id = user_id.split('-')[0]
         user_id = int(user_id)
@@ -105,14 +108,16 @@ def get_update(collection, date, user_id):
         return
     update = Update(user=user_id, type=collection)
     try:
-        client = get_fitbit_client(user_id, False)
+        user = User.get(User.id == user_id)
     except User.DoesNotExist:
         update.update = 'User %d not found' % user_id
     else:
+        client = user.get_fitbit_client()
         try:
             resource_access = getattr(client, collection)
             data = resource_access(date=date)
         except HTTPException as e:
+            _handle_unauthorised(user, e)
             logger.error(
                 'Fail to get update for %s: %s', {
                     'user': '%d' % user_id,
@@ -123,7 +128,13 @@ def get_update(collection, date, user_id):
         else:
             insert_or_create(model, user_id, date, data)
             update.update = 'Update success'
-    update.time_updated = datetime.utcnow()
+        conf = current_app.config
+        if collection == 'activities' and conf['FITBIT_INTRADAY_ENABLED']:
+            last_update = update.time_updated or '00:00'
+            get_intraday(user, client, last_update,
+                         conf['FITBIT_INTRADAY_DETAIL_LEVEL'],
+                         conf['FITBIT_INTRADAY_RESOURCES'])
+    update.time_updated = now
     update.save()
 
 
@@ -143,9 +154,35 @@ def get_resource(resource_access, model, date, user_id):
         return insert_or_create(model, user_id, date, data)
 
 
+def get_intraday(user, client, last_update, detail_level, resources):
+    for resource in resources:
+        try:
+            resp = intraday_time_series(client, resource, detail_level,
+                                        start_time=last_update)
+        except HTTPException as e:
+            _handle_unauthorised(user, e)
+            current_app.logger.error("Can't get intraday %s for user %s",
+                                     resource, user.id)
+            return
+        else:
+            date_str = resp.get('activities-%s' % resource)[0]['dateTime']
+            intraday = resp.get('activities-%s-intraday' % resource)['dataset']
+            with db.database.transaction():
+                for entry in intraday:
+                    # only store non-zero value
+                    if entry['value']:
+                        intraday_activity = IntradayActivity(
+                            activity_time=make_datetime(
+                                date_str, entry['time']),
+                        )
+                        setattr(intraday, resource, entry['value'])
+                        intraday_activity.save()
+
+
 @Task(max_retry=0)
 def sync_history(user_id, dates, collection):
-    client = get_fitbit_client(user_id)
+    user = User.get(User.id == user_id)
+    client = user.get_fitbit_client()
     resource_access = getattr(client, collection)
     model = get_model_by_name(collection)
 

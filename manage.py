@@ -7,6 +7,7 @@ from flask.ext.script import Manager, prompt, prompt_pass, prompt_bool
 from flask.ext.script.commands import ShowUrls
 
 from xponentialy import load_app
+from xponentialy.models import User
 from xponentialy.tasks.fbit import sync_history, get_fitbit_client, subscribe
 from xponentialy.utils import recent_days
 
@@ -78,8 +79,8 @@ def sync(user_id, days):
 @fitbit.option('-u', '--user-id', dest='user_id', type=int)
 @fitbit.option('-c', '--collection')
 def list_subscriptions(user_id, collection):
-    client = get_fitbit_client(user_id)
-    print client.list_subscriptions(collection)
+    u = User.get(User.id == user_id)
+    print u.get_fitbit_client.list_subscriptions(collection)
 
 
 @fitbit.option('-u', '--user-id', dest='user_id', type=int)
@@ -87,8 +88,8 @@ def list_subscriptions(user_id, collection):
 @fitbit.option('-d', '--delete', action='store_true')
 def subscribe(user_id, collection, delete=False):
     method = 'DELETE' if delete else 'POST'
-    client = get_fitbit_client(user_id)
-    print client.subscription(
+    u = User.get(User.id == user_id)
+    print u.get_fitbit_client.subscription(
         user_id, current_app.config['FITBIT_SUBSCRIPTION_ID'],
         collection, method=method)
 

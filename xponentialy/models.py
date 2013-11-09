@@ -1,10 +1,11 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
 import datetime
-import time
 
+from flask import current_app
 from flask.ext.peewee.auth import BaseUser
 from peewee import *
+from fitbit import Fitbit
 
 from xponentialy import db
 from xponentialy.utils import time_range
@@ -102,6 +103,14 @@ class User(db.Model, BaseUser):
             .where(User.company == cid).where(User.active) \
             .order_by(challenge_completed.desc())
 
+    def get_fitbit_client(self):
+        return Fitbit(
+            current_app.config['FITBIT_KEY'],
+            current_app.config['FITBIT_SECRET'],
+            user_key=self.oauth_token,
+            user_secret=self.oauth_secret
+        )
+
     def __unicode__(self):
         return self.username
 
@@ -175,7 +184,7 @@ class Activity(db.Model):
         self.min_fairlyactive = summary.get('fairlyActiveMinutes', None)
         self.min_veryactive = summary.get('veryActiveMinutes', None)
         self.activity_calories = summary.get('activityCalories', None)
-        self.last_update = time.time()
+        self.last_update = datetime.datetime.utcnow()
 
     def __unicode__(self):
         return u'Activity of %s on %s' % (self.user, self.date)
