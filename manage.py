@@ -8,7 +8,7 @@ from flask.ext.script.commands import ShowUrls
 
 from xponentialy import load_app
 from xponentialy.models import User
-from xponentialy.tasks.fbit import sync_history, get_fitbit_client, subscribe
+from xponentialy.tasks.fbit import sync_history
 from xponentialy.utils import recent_days
 
 manager = Manager(load_app)
