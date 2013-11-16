@@ -1,10 +1,11 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
 import datetime
-import time
 
+from flask import current_app
 from flask.ext.peewee.auth import BaseUser
 from peewee import *
+from fitbit import Fitbit
 
 from xponentialy import db
 from xponentialy.utils import time_range
@@ -102,6 +103,14 @@ class User(db.Model, BaseUser):
             .where(User.company == cid).where(User.active) \
             .order_by(challenge_completed.desc())
 
+    def get_fitbit_client(self):
+        return Fitbit(
+            current_app.config['FITBIT_KEY'],
+            current_app.config['FITBIT_SECRET'],
+            user_key=self.oauth_token,
+            user_secret=self.oauth_secret
+        )
+
     def __unicode__(self):
         return self.username
 
@@ -155,8 +164,9 @@ class Activity(db.Model):
         indexes = (
             (('user', 'date'), True),
         )
+        order_by = ('-date', )
 
-    def update(self, data):
+    def update_from_fitbit(self, data):
         summary = data['summary']
         self.steps = summary.get('steps', 0)
         self.floors = summary.get('floors', 0)
@@ -168,13 +178,13 @@ class Activity(db.Model):
             if item['activity'] == 'total':
                 self.distance = item['distance']
                 break
-        self.elevation = summary.get('elevation')
-        self.min_sedentary = summary['sedentaryMinutes']
-        self.min_lightlyactive = summary['lightlyActiveMinutes']
-        self.min_fairlyactive = summary['fairlyActiveMinutes']
-        self.min_veryactive = summary['veryActiveMinutes']
-        self.activity_calories = summary.get('activityCalories', 0)
-        self.last_update = time.time()
+        self.elevation = summary.get('elevation', None)
+        self.min_sedentary = summary.get('sedentaryMinutes', None)
+        self.min_lightlyactive = summary.get('lightlyActiveMinutes', None)
+        self.min_fairlyactive = summary.get('fairlyActiveMinutes', None)
+        self.min_veryactive = summary.get('veryActiveMinutes', None)
+        self.activity_calories = summary.get('activityCalories', None)
+        self.last_update = datetime.datetime.utcnow()
 
     def __unicode__(self):
         return u'Activity of %s on %s' % (self.user, self.date)
@@ -192,6 +202,29 @@ class IntradayActivity(db.Model):
 
     class Meta:
         db_table = 'intradayactivity'
+        order_by = ('-activity_time',)
+        indexes = (
+            (('user', 'activity_time'), True),
+        )
+
+    def update_from_fitbit(self, data, resource):
+        """
+        returns True if anything has changed
+        """
+        def update_if_changed(key, val):
+            if getattr(self, key) == val:
+                return False
+            else:
+                setattr(self, key, val)
+                return True
+
+        if resource == 'calories':
+            return (
+                update_if_changed('calories', data['value']) or
+                update_if_changed('calories_level', data['level'])
+            )
+        else:
+            return update_if_changed(resource, data['value'])
 
     def __unicode__(self):
         return 'IntradayActivity of %s at %s' % (self.user, self.activity_time)
@@ -212,21 +245,20 @@ class Sleep(db.Model):
 
     class Meta:
         db_table = 'sleep'
+        order_by = ('-date',)
 
-    def update(self, data):
+    def update_from_fitbit(self, data):
         summary = data['summary']
         self.total_time = summary['totalTimeInBed']
         self.time_asleep = summary['totalMinutesAsleep']
-        # todo: what if we have multiple sleep records?
-        if summary['totalSleepRecords'] >= 1:
-            sleep = data['sleep'][0]
+        for sleep in data['sleep']:
             self.start_time = datetime.datetime.strptime(
                 sleep['startTime'], '%Y-%m-%dT%H:%M:%S.%f')
-            self.awaken_count = sleep['awakeningsCount']
-            self.min_awake = sleep['minutesAwake']
-            self.min_to_asleep = sleep['minutesToFallAsleep']
-            self.min_after_wake = sleep['minutesAfterWakeup']
-            self.efficiency = sleep['efficiency']
+            self.awaken_count = sleep.get('awakeningsCount', None)
+            self.min_awake = sleep.get('minutesAwake', None)
+            self.min_to_asleep = sleep.get('minutesToFallAsleep', None)
+            self.min_after_wake = sleep.get('minutesAfterWakeup', None)
+            self.efficiency = sleep.get('efficiency', None)
 
     def __unicode__(self):
         return u'Sleep of %s on %s' % (self.user, self.date)
@@ -241,6 +273,11 @@ class Update(db.Model):
 
     class Meta:
         db_table = 'updates'
+        order_by = ('-time_updated',)
+        indexes = (
+            (('user', ), False),
+            (('time_updated',), False),
+        )
 
     def __unicode__(self):
         return u'type: %s; user: %s; time: %s' % (

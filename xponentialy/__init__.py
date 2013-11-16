@@ -16,6 +16,7 @@ from logging.handlers import RotatingFileHandler
 
 from flask import Flask
 from flask.ext.peewee.db import Database
+import peewee
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -48,6 +49,7 @@ def load_app():
     formatter = logging.Formatter(conf['LOG_FORMAT'])
     handler.setFormatter(formatter)
     app.logger.addHandler(handler)
+    peewee.logger = app.logger
 
     # views
     import views
