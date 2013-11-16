@@ -35,10 +35,10 @@ FITBIT_SUBSCRIPTION_COLLECTIONS = ['sleep', 'activities']
 FITBIT_SUBSCRIPTION_ID = 'ec2-dev'
 # how long to sync data when the user first connects to us
 FITBIT_SYNC_DAYS = 30
-FITBIT_INTRADAY_ENABLED = False
+FITBIT_INTRADAY_ENABLED = True
 FITBIT_INTRADAY_DETAIL_LEVEL = '1min'
-FITBIT_INTRADAY_RESOURCES = ('steps', 'distance', 'calories', 'floors',
-                             'elevation')
+FITBIT_INTRADAY_RESOURCES = ('steps', 'calories', 'floors', 'elevation')
+FITBIT_FLOAT_PRECISION = 4  # number of places to preserve
 
 # Tasks
 TASK_RETRY_INTERVAL = 30
@@ -54,5 +54,5 @@ API_VERSION = 1
 LOG_FILE = '/tmp/xponentialy.log'
 LOG_MAX_BYTES = 10485760  # 10MB
 LOG_BACKUP_COUNT = 10
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 LOG_FORMAT = "%(asctime)s [%(levelname)s] [%(name)s] %(message)s"

@@ -1,16 +1,18 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 from flask import current_app
 from fitbit import Fitbit
 from fitbit.exceptions import HTTPException, HTTPUnauthorized
 
-from . import Task
+from xponentialy.tasks import Task
 from xponentialy import db
 from xponentialy.models import User, Update, IntradayActivity
 from xponentialy.models import get_model_by_name
-from xponentialy.utils import get_intraday_url, make_datetime, recent_days, split_datetime
+from xponentialy.utils import get_intraday_url
+from xponentialy.utils import make_datetime
 
 
 def _handle_unauthorised(user, exception):
@@ -80,10 +82,7 @@ def insert_or_create(model, user_id, date, data):
     :param data: resource data returned by fitbit
     :return: the new or updated instance
     """
-    try:
-        item = model.get(model.user == user_id, model.date == date)
-    except model.DoesNotExist:
-        item = model(user=user_id, date=date)
+    item = model.get_or_create(user=user_id, date=date)
     item.update_from_fitbit(data)
     item.save()
     return item
@@ -116,6 +115,7 @@ def get_update(collection, date, user_id):
         try:
             resource_access = getattr(client, collection)
             data = resource_access(date=date)
+            print data
         except HTTPException as e:
             _handle_unauthorised(user, e)
             logger.error(
@@ -124,20 +124,19 @@ def get_update(collection, date, user_id):
                     'collection': collection,
                     'date': date
                 }, repr(e))
-            update.update = 'Fail to get update: %s' % e
+            update.update = 'Fail to get update: %s' % repr(e)
         else:
-            insert_or_create(model, user_id, date, data)
+            item = insert_or_create(model, user_id, date, data)
             update.update = 'Update success'
             conf = current_app.config
             if collection == 'activities' and conf['FITBIT_INTRADAY_ENABLED']:
-                last_update = Update.last_update_time(user, 'activities')
-                # for the first time, sync last day's data
-                if not last_update:
-                    last_update = datetime.utcnow() - timedelta(days=1)
+                # only update changed resources
+                resources = [r for r in conf['FITBIT_INTRADAY_RESOURCES']
+                             if getattr(item, r)]
                 get_intraday(
-                    user, client, last_update,
+                    user, client, date, '00:00',
                     detail_level=conf['FITBIT_INTRADAY_DETAIL_LEVEL'],
-                    resources=conf['FITBIT_INTRADAY_RESOURCES']
+                    resources=resources
                 )
     update.time_updated = now
     update.save()
@@ -159,61 +158,51 @@ def get_resource(resource_access, model, date, user_id):
         return insert_or_create(model, user_id, date, data)
 
 
-def get_intraday(user, client, last_update, detail_level, resources):
+def get_intraday(user, client, base_date, start_time, detail_level, resources):
     """
     Get intraday data from base_date:start_time to now.
     """
-    today = datetime.utcnow().replace(hour=0, minute=0, second=0,
-                                      microsecond=0)
-
-    def get_dates(last_update):
-        yield split_datetime(last_update)
-        delta = timedelta(days=1)
-        last_update = last_update.replace(
-            hour=0, minute=0, second=0, microsecond=0)
-        last_update += delta
-        while (today - last_update).days >= 0:
-            yield split_datetime(last_update)
-            last_update += delta
-
+    if not resources:
+        return
+    date = datetime.strptime(base_date, '%Y-%m-%d')
     logger = current_app.logger
+    existing = IntradayActivity.select().where(
+        IntradayActivity.user == user,
+        IntradayActivity.activity_time.between(
+            date, date + timedelta(days=1)))
+    cache = defaultdict(lambda: IntradayActivity(user=user))
+    dirty = set()
+    for item in existing:
+        cache[item.activity_time.strftime('%H:%M:%S')] = item
     for resource in resources:
-        for base_date, start_time in get_dates(last_update):
-            url = get_intraday_url(client, resource,
-                                   detail_level=detail_level,
-                                   base_date=base_date,
-                                   start_time=start_time)
-            try:
-                resp = client.make_request(url)
-            except HTTPException as e:
-                _handle_unauthorised(user, e)
-                logger.error("Can't get intraday %s for user %s",
-                             resource, user.id)
-                return
-            else:
-                logger.debug('GET %s: %s', url, resp)
-                date_str = resp.get('activities-%s' % resource)[0]['dateTime']
-                intraday = resp.get(
-                    'activities-%s-intraday' % resource)['dataset']
-                with db.database.transaction():
-                    for entry in intraday:
-                        # only store non-zero value
-                        if entry['value']:
-                            try:
-                                intraday_activity = IntradayActivity.get(
-                                    IntradayActivity.user == user,
-                                    IntradayActivity.activity_time ==
-                                    make_datetime(date_str, entry['time']),
-                                )
-                            except IntradayActivity.DoesNotExist:
-                                intraday_activity = IntradayActivity(
-                                    user=user,
-                                    activity_time=make_datetime(
-                                        date_str, entry['time'])
-                                )
-                            intraday_activity.update_from_fitbit(
-                                entry, resource)
-                            intraday_activity.save()
+        url = get_intraday_url(client, resource,
+                               detail_level=detail_level,
+                               base_date=base_date,
+                               start_time=start_time)
+        try:
+            resp = client.make_request(url)
+        except HTTPException as e:
+            _handle_unauthorised(user, e)
+            logger.error("Can't get intraday %s for user %s: %s",
+                         resource, user.id, repr(e))
+            continue
+        else:
+            date_str = resp.get('activities-%s' % resource)[0]['dateTime']
+            dataset = resp.get(
+                'activities-%s-intraday' % resource)['dataset']
+            precision = current_app.config['FITBIT_FLOAT_PRECISION']
+            for item in dataset[:-1]:
+                if item['value']:  # only store non-empty values
+                    intraday_activity = cache[item['time']]
+                    item['value'] = round(item['value'], precision)
+                    intraday_activity.activity_time = make_datetime(
+                        date_str, item['time'])
+                    if intraday_activity.update_from_fitbit(item, resource):
+                        dirty.add(intraday_activity)
+    with db.database.transaction():
+        logger.info('%d intraday activity records updated', len(dirty))
+        for item in dirty:
+            item.save()
 
 
 @Task(max_retry=0)
@@ -225,3 +214,10 @@ def sync_history(user_id, dates, collection):
 
     return [get_resource(resource_access, model, date, user_id)
             for date in dates]
+
+
+if __name__ == '__main__':
+    from xponentialy import load_app, app
+    load_app()
+    with app.app_context():
+        get_update('activities', '2013-10-07', '2')

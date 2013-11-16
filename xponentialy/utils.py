@@ -1,6 +1,6 @@
 #!/usr/env/bin python
 # -*- coding: utf-8 -*-
-from datetime import datetime as dt
+from datetime import datetime
 from datetime import timedelta
 
 
@@ -44,17 +44,17 @@ def make_datetime(date_str, time_str):
     :param time_str: '%H:%M:%S', e.g. 23:20:02
     :return:
     """
-    return dt.strptime('%s %s' % (date_str, time_str), '%Y-%m-%d %H:%M:%S')
+    return datetime.strptime('%s %s' % (date_str, time_str), '%Y-%m-%d %H:%M:%S')
 
 
-def split_datetime(dt):
+def split_datetime(dt2):
     """
     Given a datetime object, return a tuple consisting a date str and a
     time str.
-    :param dt: a datetime object
+    :param dt2: a datetime object
     :return: ('%Y-%m-%d', '%H:%M')
     """
-    return dt.strftime('%Y-%m-%d'), dt.strftime('%H:%M')
+    return dt2.strftime('%Y-%m-%d'), dt2.strftime('%H:%M')
 
 
 def time_range(n_days):
@@ -62,7 +62,7 @@ def time_range(n_days):
     :param n_days:
     :return:
     """
-    now = dt.utcnow()
+    now = datetime.utcnow()
     delta = timedelta(seconds=n_days * 86400)
     return now - delta, now
 
@@ -81,8 +81,12 @@ def recent_days(n=30, formator=None):
     if not formator:
         formator = lambda d: d.strftime('%Y-%m-%d')
     delta = timedelta(seconds=86400)
-    today = dt.utcnow()
+    today = datetime.utcnow()
     yield formator(today)
     for i in xrange(n - 1):
         today = today - delta
         yield formator(today)
+
+
+def almost_equal(a, b, delta):
+    return abs(a - b) <= delta

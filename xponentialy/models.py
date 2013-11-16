@@ -208,12 +208,23 @@ class IntradayActivity(db.Model):
         )
 
     def update_from_fitbit(self, data, resource):
-        if resource == 'calories':
-            self.calories = data['value']
-            self.calories_level = data['level']
-        else:
-            setattr(self, resource, data['value'])
+        """
+        returns True if anything has changed
+        """
+        def update_if_changed(key, val):
+            if getattr(self, key) == val:
+                return False
+            else:
+                setattr(self, key, val)
+                return True
 
+        if resource == 'calories':
+            return (
+                update_if_changed('calories', data['value']) or
+                update_if_changed('calories_level', data['level'])
+            )
+        else:
+            return update_if_changed(resource, data['value'])
 
     def __unicode__(self):
         return 'IntradayActivity of %s at %s' % (self.user, self.activity_time)
@@ -267,14 +278,6 @@ class Update(db.Model):
             (('user', ), False),
             (('time_updated',), False),
         )
-
-    @classmethod
-    def last_update_time(cls, user, collection):
-        try:
-            update = Update.get(Update.user == user, Update.type == collection)
-            return update.time_updated
-        except Update.DoesNotExist:
-            return None
 
     def __unicode__(self):
         return u'type: %s; user: %s; time: %s' % (
