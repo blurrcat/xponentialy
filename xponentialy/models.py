@@ -86,6 +86,7 @@ class User(db.Model, BaseUser):
     avatar = CharField(null=True)
     staff = IntegerField(null=True)
     username = CharField(null=True, unique=True)
+    utc_offset = IntegerField(default=0)  # in seconds
 
     challenge_num = property(lambda self: self.challenges.count())
     rank = property(lambda self: 1)  # Todo: implement rank
