@@ -216,6 +216,23 @@ def sync_history(user_id, dates, collection):
             for date in dates]
 
 
+@Task()
+def get_user_profile(user):
+    client = user.get_fitbit_client()
+    profile = client.user_profile_get()['user']
+    user.fitbit = profile.get('encodedId')
+    user.avatar = profile.get('avatar')
+    user.gender = profile.get('gender')
+    if not (user.first_name or user.last_name):
+        # only use names from fitbit if they are not set already
+        fullname = profile.get('fullName')
+        if fullname:
+            parts = fullname.split(' ', 1)
+            if len(parts) == 2:
+                user.first_name, user.last_name = parts
+    user.utc_offset = profile.get('offsetFromUTCMillis', 0) / 1000
+    user.save()
+
 if __name__ == '__main__':
     from xponentialy import load_app, app
     load_app()
