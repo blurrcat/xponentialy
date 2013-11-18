@@ -13,7 +13,8 @@ from xponentialy.utils import time_range
 __all__ = ['Company', 'House', 'User', 'Survey', 'Activity',
            'IntradayActivity', 'Sleep', 'Update', 'Badge', 'UserBadge',
            'ForumThread', 'Challenge', 'ChallengeParticipant', 'InvalidPeriod',
-           'Notification', 'Postsubscription', 'Emailmessage', 'Threadpost']
+           'Notification', 'Postsubscription', 'Emailmessage', 'Threadpost',
+           'SysNotification']
 
 
 class Company(db.Model):
@@ -410,6 +411,20 @@ class Notification(db.Model):
 
     def __unicode__(self):
         return self.description
+
+
+class SysNotification(db.Model):
+    content = TextField()
+    company = ForeignKeyField(Company, related_name='notifications')
+    create_at = DateTimeField(default=datetime.datetime.utcnow)
+    expire_at = DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'sysnotification'
+        order_by = ('-create_at',)
+
+    def __unicode__(self):
+        return self.content[:30]
 
 
 class Postsubscription(db.Model):

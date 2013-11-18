@@ -34,8 +34,13 @@ class RestrictOwnerIDResource(RestrictOwnerResource):
     # fields are loaded into g.user.
     # It makes more sense to compare pk here.
 
-    def validate_owner(self, user, obj):
-        return user.id == getattr(obj, self.owner_field).id
+    def validate_owner(self, owner, obj):
+        return owner.id == getattr(obj, self.owner_field).id
+
+
+class CompanyAccessResource(RestrictOwnerIDResource):
+
+    owner_field = 'company'
 
 
 class StrictOwnerResource(RestrictOwnerIDResource):
@@ -82,6 +87,11 @@ class LeaderBoardMixin(object):
                 'time_range': self.get_leaderboard_time_range()
             })
         return meta
+
+
+class SysNotificationResource(CompanyAccessResource):
+
+    pass
 
 
 class UserResource(RestResource, LeaderBoardMixin):
@@ -200,6 +210,8 @@ api.register(models.Sleep, SleepResource, allowed_methods=['GET'])
 api.register(models.IntradayActivity, IntradayActivityResource,
              allowed_methods=['GET'])
 api.register(models.House, HouseResource, allowed_methods=['GET'])
+api.register(models.SysNotification, SysNotificationResource,
+             allowed_methods=['GET'])
 
 
 @api.blueprint.route('/')
